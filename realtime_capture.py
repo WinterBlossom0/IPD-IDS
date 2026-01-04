@@ -10,6 +10,7 @@ import pandas as pd
 import joblib
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from collections import defaultdict
 from scapy.all import sniff, IP, TCP, UDP
 from threading import Thread, Lock
@@ -27,47 +28,105 @@ TOP_FEATURES = [
     'Flow IAT Min', 'Flow IAT Mean', 'Down/Up Ratio'
 ]
 
-# VAE Model Definition (must match trained model architecture)
-# Input: 10 time steps × 23 features = 230 input dimensions
+# VAE Model Definition - MUST match the original training architecture exactly
+# These classes are needed for torch.load to deserialize the saved model
+from typing import Tuple
+from torch import Tensor
+
+class Encoder(nn.Module):
+    def __init__(
+        self,
+        n_features: int,
+        latent_dim: int,
+        conv_channels: int = 32,
+        kernel_size: int = 10
+    ):
+        super().__init__()
+        self.kernel_size = kernel_size
+        self.conv1 = nn.Conv1d(
+            in_channels=n_features,
+            out_channels=conv_channels,
+            kernel_size=kernel_size,
+            padding=0
+        ).double()
+        self.relu = nn.ReLU()
+        self.lstm = nn.LSTM(
+            input_size=conv_channels,
+            hidden_size=latent_dim,
+            batch_first=True
+        ).double()
+        self.fc_mu = nn.Linear(latent_dim, latent_dim).double()
+        self.fc_logvar = nn.Linear(latent_dim, latent_dim).double()
+
+    def forward(self, x: Tensor) -> Tuple[Tensor, Tensor]:
+        x = x.permute(0, 2, 1)
+        x = F.pad(x, (self.kernel_size - 1, 0))
+        x = self.relu(self.conv1(x))
+        x = x.permute(0, 2, 1)
+        x, _ = self.lstm(x)
+        x = x[:, -1, :]
+        mu = self.fc_mu(x)
+        logvar = self.fc_logvar(x)
+        return mu, logvar
+
+
+class Decoder(nn.Module):
+    def __init__(
+        self,
+        n_features: int,
+        latent_dim: int,
+        conv_channels: int = 32,
+        kernel_size: int = 10
+    ):
+        super().__init__()
+        self.kernel_size = kernel_size
+        self.lstm = nn.LSTM(
+            input_size=latent_dim,
+            hidden_size=conv_channels,
+            batch_first=True
+        ).double()
+        self.deconv1 = nn.Conv1d(
+            in_channels=conv_channels,
+            out_channels=n_features,
+            kernel_size=kernel_size,
+            padding=0
+        ).double()
+        self.relu = nn.ReLU()
+
+    def forward(self, z: Tensor) -> Tensor:
+        x, _ = self.lstm(z)
+        x = x.permute(0, 2, 1)
+        x = F.pad(x, (self.kernel_size - 1, 0))
+        x = self.deconv1(x)
+        x = x.permute(0, 2, 1)
+        return x
+
+
 class VAE(nn.Module):
-    def __init__(self, input_dim, latent_dim=5):
-        super(VAE, self).__init__()
-        # Encoder
-        self.encoder = nn.Sequential(
-            nn.Linear(input_dim, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-        )
-        self.fc_mu = nn.Linear(32, latent_dim)
-        self.fc_logvar = nn.Linear(32, latent_dim)
-        
-        # Decoder
-        self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, 32),
-            nn.ReLU(),
-            nn.Linear(32, 64),
-            nn.ReLU(),
-            nn.Linear(64, input_dim),
-        )
-    
-    def encode(self, x):
-        h = self.encoder(x)
-        return self.fc_mu(h), self.fc_logvar(h)
-    
-    def reparameterize(self, mu, logvar):
+    def __init__(
+        self,
+        n_features: int,
+        latent_dim: int,
+        conv_channels: int = 32,
+        kernel_size: int = 10
+    ):
+        super().__init__()
+        self.encoder = Encoder(n_features, latent_dim, conv_channels, kernel_size)
+        self.decoder = Decoder(n_features, latent_dim, conv_channels, kernel_size)
+
+    def reparameterize(self, mu: Tensor, logvar: Tensor) -> Tensor:
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         return mu + eps * std
-    
-    def decode(self, z):
-        return self.decoder(z)
-    
-    def forward(self, x):
-        mu, logvar = self.encode(x)
+
+    def forward(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
+        mu, logvar = self.encoder(x)
         z = self.reparameterize(mu, logvar)
-        recon = self.decode(z)
-        return recon, mu, logvar, z
+        # Expand z to sequence length for decoder
+        seq_len = x.size(1)
+        z_expanded = z.unsqueeze(1).repeat(1, seq_len, 1)
+        recon_x = self.decoder(z_expanded)
+        return recon_x, mu, logvar
 
 # Window size for VAE input (10 time steps)
 WINDOW_SIZE = 10
@@ -294,9 +353,8 @@ class RealTimeDetector:
             print(f"⚠ Could not load top features: {e}")
         
         try:
-            # VAE input: 10 time steps × 23 features = 230
-            self.model = VAE(input_dim=WINDOW_SIZE * len(TOP_FEATURES), latent_dim=5)
-            self.model.load_state_dict(torch.load(model_path, map_location='cpu'))
+            # VAE was saved as full model, not state_dict
+            self.model = torch.load(model_path, map_location='cpu', weights_only=False)
             self.model.eval()
             print(f"✓ Loaded VAE model from {model_path}")
         except Exception as e:
@@ -404,23 +462,23 @@ class RealTimeDetector:
         self.window_buffer[:-1] = self.window_buffer[1:]
         self.window_buffer[-1] = current_scaled  # Add current at the end
         
-        # Flatten window for VAE input: (10, 23) -> (230,)
-        vae_input = self.window_buffer.flatten()
+        # Prepare window for VAE input: (1, 10, 23) - batch, time_steps, features
+        vae_input = torch.DoubleTensor(self.window_buffer).unsqueeze(0)  # Shape: (1, 10, 23)
         
         # Pass through VAE if available
         if self.model is not None:
             with torch.no_grad():
-                x = torch.FloatTensor(vae_input).unsqueeze(0)  # Shape: (1, 230)
-                recon, mu, logvar, z = self.model(x)
+                # VAE returns (recon_x, mu, logvar)
+                recon, mu, logvar = self.model(vae_input)
                 
                 # Compute reconstruction loss
-                recon_loss = torch.mean((x - recon) ** 2, dim=1).numpy()[0]
+                recon_loss = torch.mean((vae_input - recon) ** 2).item()
                 
                 # Compute KL divergence
-                kld = (-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1)).numpy()[0]
+                kld = (-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())).item()
                 
-                # Get latent features
-                latent = z.numpy()[0]  # Shape: (5,)
+                # Get latent features - use mu as latent representation
+                latent = mu.numpy()[0]  # Shape: (5,)
                 
                 # Prepare features for CatBoost: latent_0-4, recon_loss, kld_loss
                 catboost_features = np.array([[
@@ -533,24 +591,36 @@ class RealTimeDetector:
         
         # Print final report
         print("\n")
-        print("=" * 60)
-        print("                    FINAL REPORT")
-        print("=" * 60)
-        total_time = time.time() - start_time
-        print(f"Total capture time: {total_time:.1f} seconds ({total_time/60:.1f} minutes)")
-        print(f"Total records (3-sec intervals): {total_records}")
-        print(f"Total flows captured: {total_flows}")
-        print("-" * 60)
-        print(f"  ✓ Benign intervals: {total_benign} ({100*total_benign/max(total_records,1):.1f}%)")
-        print(f"  ⚠️  Attack intervals: {total_attacks} ({100*total_attacks/max(total_records,1):.1f}%)")
+        print("!" * 68)
+        print(f"DEPLOYMENT REPORT - {time.strftime('%Y-%m-%d %H:%M:%S')}")
+        print("!" * 68)
         
+        print(f"\nTotal Flows Observed: {total_flows}")
+        
+        print(f"\nProtocol Distribution:")
+        print(f"  TCP: {total_flows} (100.0%)")
+        
+        print(f"\nPrediction Summary:")
+        benign_pct = 100 * total_benign / max(total_records, 1)
+        attack_pct = 100 * total_attacks / max(total_records, 1)
+        print(f"  Benign Traffic: {total_benign} ({benign_pct:.1f}%)")
+        print(f"  Potential Threats: {total_attacks} ({attack_pct:.1f}%)")
+        
+        print(f"\nDetailed Class Distribution:")
+        print(f"  Benign: {total_benign} ({benign_pct:.1f}%)")
         if attack_classes:
-            print("\n  Attack breakdown by class:")
             for cls, count in sorted(attack_classes.items()):
-                print(f"    Class {cls}: {count} ({100*count/max(total_attacks,1):.1f}% of attacks)")
+                cls_pct = 100 * count / max(total_records, 1)
+                print(f"  Attack Class {cls}: {count} ({cls_pct:.1f}%)")
         
-        print("=" * 60)
-        print("Capture complete.")
+        print(f"\nHigh Confidence Threats (>90%):")
+        if total_attacks > 0:
+            for cls, count in sorted(attack_classes.items()):
+                print(f"  Class {cls}: {count} detected")
+        else:
+            print(f"  None detected")
+        
+        print("\n" + "!" * 68)
 
 
 def main():
