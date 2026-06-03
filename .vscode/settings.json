@@ -1,5 +1,4 @@
 {
-    "python.defaultInterpreterPath": "/home/vihaan/py-global/bin/python3",
     "git.ignoreLimitWarning": true,
     "python.pyrefly.typeCheckingMode": "default",
     "python.pyrefly.diagnosticMode": "workspace"

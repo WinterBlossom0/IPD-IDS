@@ -2,11 +2,14 @@
 """
 Real-time Network Traffic Feature Extraction and Anomaly Detection
 Captures network packets, extracts CIC-IDS style features, and runs through
-the new ConvAttention+LSTM VAE (aligned with cic-ids-vae.ipynb / cic_neural.ipynb).
+the ConvAttention+LSTM VAE and BinaryFirstTabularNet neural classifier.
 
-OOD scoring uses the same reconstruction-loss fusion approach as the neural notebook:
-  attack_score = (1 - w) * (1 - proba_benign) + w * recon_score
-No CatBoost dependency -- purely neural.
+Methodology Note:
+While early architecture iterations referred to this as a VAE-CatBoost hybrid,
+the runtime prediction pipeline is entirely neural. CatBoost is used strictly 
+in the offline training phase (cic-ids-vae.ipynb) for pre-training feature 
+selection via SHAP importance ranking. There is no CatBoost dependency here.
+
 """
 
 import time
@@ -44,11 +47,11 @@ WINDOW_SIZE = 30          # Sliding window – same as cic_ids_vae_benchmark.py
 DF_DEG = 3.0
 RECON_STUDENT_WEIGHT = 0.4
 RECON_MSE_WEIGHT = 0.2
-RECON_OOD_WEIGHT = 0.45   # Match neural notebook fusion weight
+RECON_OOD_WEIGHT = 0.35   # Match neural notebook fusion weight (0.35 recon, 0.65 binary clf)
 EPS = 1e-8
 
 # OOD binary threshold (can be overridden at runtime)
-DEFAULT_OOD_THRESHOLD = 0.55
+DEFAULT_OOD_THRESHOLD = 0.694
 
 ATTACK_CLASS_NAMES = {
     0: "Benign",
@@ -62,13 +65,14 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 DATA_DIR_CANDIDATES = [PROJECT_ROOT, PROJECT_ROOT / "datasets"]
 
 TOP_FEATURES = [
-    "Fwd Pkts/s", "Init Bwd Win Byts", "Flow Pkts/s", "Fwd Seg Size Min",
-    "Init Fwd Win Byts", "Flow IAT Std", "Pkt Len Max", "ACK Flag Cnt",
-    "Fwd Header Len", "Fwd Pkt Len Std", "Bwd Pkts/s", "Flow Byts/s",
-    "Fwd Pkt Len Max", "Bwd Header Len", "Fwd IAT Tot", "Bwd Pkt Len Max",
-    "Fwd Pkt Len Mean", "URG Flag Cnt", "Fwd IAT Std", "Pkt Len Std",
-    "Flow IAT Min", "Flow IAT Mean", "Down/Up Ratio",
+    "Flow Pkts/s", "Fwd Seg Size Min", "Init Bwd Win Byts", "Fwd Pkts/s",
+    "Bwd Pkts/s", "Flow IAT Std", "Init Fwd Win Byts", "Fwd Pkt Len Std",
+    "Pkt Len Max", "ACK Flag Cnt", "Flow Byts/s", "Fwd Header Len",
+    "Tot Bwd Pkts", "Fwd Pkt Len Max", "Bwd Header Len", "Pkt Len Std",
+    "Tot Fwd Pkts", "Bwd IAT Min", "Bwd IAT Mean", "Fwd IAT Std",
+    "PSH Flag Cnt", "Pkt Len Var"
 ]
+
 
 
 # ---------------------------------------------------------------------------
@@ -430,63 +434,70 @@ class RealTimeDetector:
     def _load_artifacts(self, vae_path, classifier_path, nn_scaler_path, col_map_path, top_feat_path, recon_path):
         # Column min/max mapping
         p = self._find(col_map_path)
-        if p.exists():
-            self.column_mapping = pd.read_csv(p).set_index("column")
-            print(f"✓ Column mapping loaded  ({len(self.column_mapping)} cols)")
-        else:
-            print(f"⚠ Column mapping not found: {p}")
+        if not p.exists():
+            raise FileNotFoundError(f"CRITICAL: Column mapping file '{p}' not found. This file is required.")
+        if p.stat().st_size == 0:
+            raise ValueError(f"CRITICAL: Column mapping file '{p}' is empty (0 bytes).")
+        self.column_mapping = pd.read_csv(p).set_index("column")
+        print(f"✓ Column mapping loaded  ({len(self.column_mapping)} cols)")
 
         # Top features list
         p = self._find(top_feat_path)
-        if p.exists():
-            self.top_features = joblib.load(p)
-            print(f"✓ Top features loaded   ({len(self.top_features)} features)")
-        else:
-            print(f"⚠ Top features not found: {p}")
-            self.top_features = TOP_FEATURES
+        if not p.exists():
+            raise FileNotFoundError(f"CRITICAL: Top features file '{p}' not found. This file is required.")
+        if p.stat().st_size == 0:
+            raise ValueError(f"CRITICAL: Top features file '{p}' is empty (0 bytes).")
+        self.top_features = joblib.load(p)
+        print(f"✓ Top features loaded   ({len(self.top_features)} features)")
 
         # VAE checkpoint
         p = self._find(vae_path)
-        if p.exists():
-            self.vae = torch.load(p, map_location=self.device, weights_only=False)
-            self.vae.to(self.device).eval()
-            print(f"✓ VAE loaded            ({type(self.vae).__name__}) → {self.device}")
-        else:
-            print(f"⚠ VAE checkpoint not found: {p}")
+        if not p.exists():
+            raise FileNotFoundError(f"CRITICAL: VAE model file '{p}' not found. This file is required.")
+        if p.stat().st_size == 0:
+            raise ValueError(f"CRITICAL: VAE model file '{p}' is empty (0 bytes). Please verify your git clone/checkout.")
+        self.vae = torch.load(p, map_location=self.device, weights_only=False)
+        self.vae.to(self.device).eval()
+        print(f"✓ VAE loaded            ({type(self.vae).__name__}) → {self.device}")
 
         # Classifier Scaler
         p = self._find(nn_scaler_path)
-        if p.exists():
-            self.nn_scaler = joblib.load(p)
-            print(f"✓ Classifier scaler loaded ({type(self.nn_scaler).__name__})")
-        else:
-            print(f"⚠ Classifier scaler not found: {p}")
+        if not p.exists():
+            raise FileNotFoundError(f"CRITICAL: Classifier scaler file '{p}' not found. This file is required.")
+        if p.stat().st_size == 0:
+            raise ValueError(f"CRITICAL: Classifier scaler file '{p}' is empty (0 bytes). Please verify your git clone/checkout.")
+        self.nn_scaler = joblib.load(p)
+        print(f"✓ Classifier scaler loaded ({type(self.nn_scaler).__name__})")
 
         # Classifier Model
         p = self._find(classifier_path)
-        if p.exists():
-            self.classifier = BinaryFirstTabularNet(input_dim=8, n_classes=5, n_attack_classes=4)
-            self.classifier.load_state_dict(torch.load(p, map_location=self.device))
-            self.classifier.to(self.device).eval()
-            print(f"✓ Classifier loaded     ({type(self.classifier).__name__}) → {self.device}")
-        else:
-            print(f"⚠ Classifier model not found: {p}")
+        if not p.exists():
+            raise FileNotFoundError(f"CRITICAL: Classifier model weights file '{p}' not found. This file is required.")
+        if p.stat().st_size == 0:
+            raise ValueError(f"CRITICAL: Classifier model weights file '{p}' is empty (0 bytes). Please verify your git clone/checkout.")
+        self.classifier = BinaryFirstTabularNet(input_dim=8, n_classes=5, n_attack_classes=4)
+        self.classifier.load_state_dict(torch.load(p, map_location=self.device))
+        self.classifier.to(self.device).eval()
+        print(f"✓ Classifier loaded     ({type(self.classifier).__name__}) → {self.device}")
 
         # Reconstruction scorer (saved as dict {"p5":…, "p95":…} inside anomaly_thresholds.joblib)
         p = self._find(recon_path)
-        if p.exists():
-            obj = joblib.load(p)
-            rs = obj.get("recon_scorer") if isinstance(obj, dict) else obj
-            if rs and "p5" in rs and "p95" in rs:
-                self.recon_scorer = ReconScorer(np.array(rs["p5"]), np.array(rs["p95"]))
-                print(f"✓ Recon scorer loaded   (p5={rs['p5']}, p95={rs['p95']})")
-            else:
-                print("⚠ recon_scorer key not found in thresholds file – scoring disabled")
-            if isinstance(obj, dict) and "threshold" in obj:
-                self.ood_threshold = float(obj["threshold"])
-                print(f"✓ OOD threshold loaded  (threshold={self.ood_threshold:.3f})")
+        if not p.exists():
+            raise FileNotFoundError(f"CRITICAL: Reconstruction thresholds file '{p}' not found. This file is required.")
+        if p.stat().st_size == 0:
+            raise ValueError(f"CRITICAL: Reconstruction thresholds file '{p}' is empty (0 bytes). Please verify your git clone/checkout.")
+        obj = joblib.load(p)
+        rs = obj.get("recon_scorer") if isinstance(obj, dict) else obj
+        if rs and "p5" in rs and "p95" in rs:
+            self.recon_scorer = ReconScorer(np.array(rs["p5"]), np.array(rs["p95"]))
+            print(f"✓ Recon scorer loaded   (p5={rs['p5']}, p95={rs['p95']})")
         else:
-            print(f"⚠ Thresholds file not found: {p}")
+            raise ValueError(f"CRITICAL: 'recon_scorer' key not found in thresholds file '{p}'. Scoring disabled.")
+        if isinstance(obj, dict) and "threshold" in obj:
+            self.ood_threshold = float(obj["threshold"])
+            print(f"✓ OOD threshold loaded  (threshold={self.ood_threshold:.3f})")
+        else:
+            raise ValueError(f"CRITICAL: 'threshold' key not found in thresholds file '{p}'. Thresholding disabled.")
 
         # Initialise window buffer
         n_feat = len(self.top_features)

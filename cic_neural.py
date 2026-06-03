@@ -33,7 +33,7 @@ RANDOM_STATE = 42
 DETERMINISTIC_RUN = True
 
 VARIANT_CONFIGS = {
-    "full": {
+    "primary": {
         "suffix": "_full",
         "train": "df_train_full.csv",
         "final_ood": "df_test_full.csv",
@@ -50,7 +50,7 @@ VARIANT_CONFIGS = {
     },
 }
 
-ACTIVE_VARIANT_NAME = "full"
+ACTIVE_VARIANT_NAME = "primary"
 DATA_SUFFIX = VARIANT_CONFIGS[ACTIVE_VARIANT_NAME]["suffix"]
 TRAIN_FILENAME = VARIANT_CONFIGS[ACTIVE_VARIANT_NAME]["train"]
 FINAL_OOD_FILENAME = VARIANT_CONFIGS[ACTIVE_VARIANT_NAME]["final_ood"]
@@ -283,7 +283,7 @@ def activate_variant(variant_name: str, force_reload: bool = False) -> None:
     print(pd.Series(row_order_domains(df_train)).value_counts().sort_index().to_string())
 
 
-activate_variant("full")
+activate_variant("primary")
 
 
 # ## Feature sets
@@ -1167,7 +1167,7 @@ def run_feature_set(variant_name: str, feature_set_name: str, experiment_name: s
     experiment_results[experiment_name] = bundle
 
     # Save logic for our main variant:
-    if experiment_name == "full__compressed_plus_losses":
+    if experiment_name == "primary__compressed_plus_losses":
         import torch, joblib
         torch.save(bundle["model"].state_dict(), "nn_classifier_model.pth")
         joblib.dump(bundle["scaler"], "nn_scaler.joblib")
@@ -1211,10 +1211,10 @@ def run_feature_set(variant_name: str, feature_set_name: str, experiment_name: s
     return bundle
 
 
-full_compressed_losses_bundle = run_feature_set(
-    variant_name="full",
+primary_compressed_losses_bundle = run_feature_set(
+    variant_name="primary",
     feature_set_name="compressed + losses",
-    experiment_name="full__compressed_plus_losses",
+    experiment_name="primary__compressed_plus_losses",
 )
 
 
@@ -1223,11 +1223,11 @@ full_compressed_losses_bundle = run_feature_set(
 
 # In[12]:
 
-# full_compressed_only_bundle = run_feature_set(
-#     variant_name="full",
-#     feature_set_name="compressed only",
-#     experiment_name="full__compressed_only",
-# )
+primary_compressed_only_bundle = run_feature_set(
+    variant_name="primary",
+    feature_set_name="compressed only",
+    experiment_name="primary__compressed_only",
+)
 
 
 # ## Full All-Features Ablation
@@ -1235,11 +1235,11 @@ full_compressed_losses_bundle = run_feature_set(
 
 # In[13]:
 
-# full_dataset_bundle = run_feature_set(
-#     variant_name="full",
-#     feature_set_name="full dataset",
-#     experiment_name="full__full_dataset",
-# )
+primary_dataset_bundle = run_feature_set(
+    variant_name="primary",
+    feature_set_name="full dataset",
+    experiment_name="primary__full_dataset",
+)
 
 
 # ## No-time-adversary compressed + losses ablation
@@ -1247,11 +1247,11 @@ full_compressed_losses_bundle = run_feature_set(
 
 # In[14]:
 
-# no_time_adv_compressed_losses_bundle = run_feature_set(
-#     variant_name="no_time_adv",
-#     feature_set_name="compressed + losses",
-#     experiment_name="no_time_adv__compressed_plus_losses",
-# )
+no_time_adv_compressed_losses_bundle = run_feature_set(
+    variant_name="no_time_adv",
+    feature_set_name="compressed + losses",
+    experiment_name="no_time_adv__compressed_plus_losses",
+)
 
 
 # ## No-student compressed + losses ablation
@@ -1259,11 +1259,11 @@ full_compressed_losses_bundle = run_feature_set(
 
 # In[15]:
 
-# no_student_compressed_losses_bundle = run_feature_set(
-#     variant_name="no_student",
-#     feature_set_name="compressed + losses",
-#     experiment_name="no_student__compressed_plus_losses",
-# )
+no_student_compressed_losses_bundle = run_feature_set(
+    variant_name="no_student",
+    feature_set_name="compressed + losses",
+    experiment_name="no_student__compressed_plus_losses",
+)
 
 
 # ## Save metrics

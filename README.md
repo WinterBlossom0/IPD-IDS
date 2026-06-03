@@ -4,6 +4,16 @@ An AI-powered Network Intrusion Detection System (IDS) that uses a hybrid deep l
 
 ---
 
+## 🔍 Methodology & CatBoost Clarification
+
+Although early architecture concepts or draft reports refer to this system as a **VAE-CatBoost** hybrid, the final implementation is a **fully neural deep learning pipeline** to eliminate runtime dependencies, optimize prediction latency, and enable end-to-end domain generalization:
+- **CatBoost (Pre-Training Feature Selection Only)**: CatBoost is utilized strictly during the offline training setup (see [cic-ids-vae.ipynb](file:///c:/Users/vihaa/OneDrive/Documents/IPD-IDS/cic-ids-vae.ipynb)) to run hyperparameter optimization (Optuna) and compute **SHAP (SHAPley Additive exPlanations)** values. This determines the top 22 most predictive features to extract from raw network flows.
+- **ConvAttention+LSTM VAE (Neural)**: Compresses the sequence of 22 input features into a 5-dimensional latent space and computes reconstruction losses (Student-t, KLD, and MSE) to score anomaly deviations from benign baseline traffic.
+- **BinaryFirstTabularNet (Neural)**: A custom tabular neural network that uses the VAE's latent space and losses as input features to perform binary attack prediction and multiclass subtype classification.
+- **Sniffer Engine (Purely Neural)**: The real-time network sniffer (`realtime_capture.py`) runs this inference pipeline entirely on PyTorch with no runtime dependency on CatBoost.
+
+---
+
 ## 🛠 System Architecture
 
 The detection pipeline consists of two primary neural components:
@@ -34,7 +44,7 @@ graph TD
    - Outputs binary attack probabilities and multiclass subtype predictions (`DoS`, `DDoS`, `Brute-Force`, `Web Attack`).
 3. **OOD Score Fusion**:
    - Fuses VAE reconstruction OOD score with classifier confidence:
-     $$\text{attack\_score} = 0.55 \times \text{binary\_prob} + 0.45 \times \text{recon\_score}$$
+     $$\text{attack\_score} = 0.65 \times \text{binary\_prob} + 0.35 \times \text{recon\_score}$$
    - If `attack_score >= 0.694`, an alert is fired with the classified subtype.
 
 ---

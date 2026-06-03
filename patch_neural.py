@@ -8,7 +8,7 @@ GPU-utilization & Threshold-vectorization fix for cic_neural.ipynb:
 
 import json, pathlib
 
-NB_PATH = pathlib.Path(r"c:\Users\vihaa\OneDrive\Documents\IPD-IDS\cic_neural.ipynb")
+NB_PATH = pathlib.Path(__file__).resolve().parent / "cic_neural.ipynb"
 nb = json.loads(NB_PATH.read_text(encoding="utf-8"))
 
 def lines_to_src(text: str) -> list:
