@@ -6,3 +6,4 @@ models/
 *.cbm
 *.model
 *.pkl
+node_modules
