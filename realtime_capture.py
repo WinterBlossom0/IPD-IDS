@@ -653,7 +653,7 @@ class RealTimeDetector:
         return t
 
     # ------------------------------------------------------------------
-    def run(self, interface=None, poll_interval: float = 0.1, duration: int = 3600):
+    def run(self, interface=None, poll_interval: float = 0.1, duration: int = 120):
         print("=" * 65)
         print("Real-Time Network Traffic Detection (VAE Neural OOD)")
         print("=" * 65)
@@ -730,7 +730,7 @@ def main():
     p = argparse.ArgumentParser(description="Real-time network anomaly detection (VAE neural)")
     p.add_argument("-i", "--interface", default=None, help="Network interface")
     p.add_argument("-t", "--interval", type=float, default=0.1, help="Polling interval for finished flows (s)")
-    p.add_argument("-d", "--duration", type=int, default=3600, help="Total duration (s)")
+    p.add_argument("-d", "--duration", type=int, default=120, help="Total duration (s)")
     p.add_argument("--vae", default="vae_full_model.pth", help="VAE checkpoint path")
     p.add_argument("--classifier", default="nn_classifier_model.pth", help="Classifier checkpoint path")
     p.add_argument("--scaler", default="nn_scaler.joblib", help="Scaler path")
