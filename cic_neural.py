@@ -34,9 +34,9 @@ DETERMINISTIC_RUN = True
 
 VARIANT_CONFIGS = {
     "primary": {
-        "suffix": "_full",
-        "train": "df_train_full.csv",
-        "final_ood": "df_test_full.csv",
+        "suffix": "_primary",
+        "train": "df_train_primary.csv",
+        "final_ood": "df_test_primary.csv",
     },
     "no_time_adv": {
         "suffix": "_no_time_adv",

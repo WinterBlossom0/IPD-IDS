@@ -393,7 +393,7 @@ class RealTimeDetector:
 
     def __init__(
         self,
-        vae_path: str = "vae_full_model.pth",
+        vae_path: str = "vae_primary_model.pth",
         classifier_path: str = "nn_classifier_model.pth",
         nn_scaler_path: str = "nn_scaler.joblib",
         column_mapping_path: str = "column_min_max_mapping.csv",
@@ -749,7 +749,7 @@ def main():
     p.add_argument("-i", "--interface", default=None, help="Network interface")
     p.add_argument("-t", "--interval", type=float, default=0.1, help="Polling interval for finished flows (s)")
     p.add_argument("-d", "--duration", type=int, default=120, help="Total duration (s)")
-    p.add_argument("--vae", default="vae_full_model.pth", help="VAE checkpoint path")
+    p.add_argument("--vae", default="vae_primary_model.pth", help="VAE checkpoint path")
     p.add_argument("--classifier", default="nn_classifier_model.pth", help="Classifier checkpoint path")
     p.add_argument("--scaler", default="nn_scaler.joblib", help="Scaler path")
     p.add_argument("--threshold", type=float, default=DEFAULT_OOD_THRESHOLD, help="OOD threshold")

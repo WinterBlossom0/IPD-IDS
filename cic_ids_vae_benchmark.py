@@ -292,7 +292,7 @@ def benchmark_vae_inference(
 
     output_path = artifact_path(f"inference_speed_benchmark_{variant_name}.csv")
     speed_df.to_csv(output_path, index=False)
-    if variant_name == "full":
+    if variant_name == "primary":
         speed_df.to_csv(artifact_path("inference_speed_benchmark.csv"), index=False)
 
     del X_array, X_windowed, vae
@@ -304,7 +304,7 @@ def benchmark_vae_inference(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Benchmark CIC-IDS VAE compression inference speed.")
-    parser.add_argument("--variant", default="full", help="VAE variant name, e.g. full, no_time_adv, no_student.")
+    parser.add_argument("--variant", default="primary", help="VAE variant name, e.g. primary, no_time_adv, no_student.")
     parser.add_argument("--batch-size", type=int, default=1, help="Benchmark batch size. Default 1 for per-flow latency.")
     parser.add_argument("--device", default="cpu", help="Torch device. Defaults to cpu.")
     parser.add_argument("--input-file", default="combined_test.csv", help="Raw CIC test CSV with Label column.")

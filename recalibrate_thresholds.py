@@ -98,7 +98,7 @@ class VAE(nn.Module):
 
 # ── load artifacts ──────────────────────────────────────────────────────────
 print("Loading VAE …")
-vae = torch.load("vae_full_model.pth", map_location="cpu", weights_only=False)
+vae = torch.load("vae_primary_model.pth", map_location="cpu", weights_only=False)
 vae.eval()
 
 top_features = joblib.load("top_features.joblib")

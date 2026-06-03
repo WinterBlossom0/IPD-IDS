@@ -56,7 +56,7 @@ graph TD
 - `cic_neural.ipynb` / `cic_neural.py` - Classifier training, domain adaptation (GRL), and threshold calibration notebook/script.
 - `cic-ids-vae.ipynb` / `cic_ids_vae_benchmark.py` - VAE model definition, training, and latency benchmarking.
 - `recalibrate_thresholds.py` - Script to calibrate baseline reconstruction percentiles.
-- `vae_full_model.pth` - Trained VAE weights.
+- `vae_primary_model.pth` - Trained VAE weights.
 - `nn_classifier_model.pth` - Trained neural classifier weights.
 - `nn_scaler.joblib` - Scaler for tabular classifier input features.
 - `column_min_max_mapping.csv` - Min-max bounds for VAE input features.

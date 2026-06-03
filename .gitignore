@@ -14,7 +14,7 @@ vae_no_student_model.pth
 vae_no_time_adv_model.pth
 
 # Keep main model weights and metadata
-!vae_full_model.pth
+!vae_primary_model.pth
 !nn_classifier_model.pth
 !nn_scaler.joblib
 !anomaly_thresholds.joblib
