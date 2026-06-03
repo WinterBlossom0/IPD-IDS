@@ -21,13 +21,19 @@ from collections import defaultdict
 from pathlib import Path
 from threading import Thread, Lock
 from typing import Tuple
+from sklearn.preprocessing import QuantileTransformer
+
+import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 
 try:
-    from scapy.all import sniff, IP, TCP, UDP
+    import sys as _sys
+    from scapy.all import sniff, IP, TCP, UDP, conf as scapy_conf
     SCAPY_AVAILABLE = True
 except ImportError:
     SCAPY_AVAILABLE = False
-    print("⚠ scapy not installed – packet capture disabled. Feature inference still works.")
+    print("⚠ scapy not installed – packet capture disabled. Run: pip install scapy")
 
 warnings.filterwarnings("ignore")
 
@@ -157,6 +163,82 @@ class VAE(nn.Module):
 
 
 # ---------------------------------------------------------------------------
+# Neural Classifier Architecture (BinaryFirstTabularNet / OpenWorldTabularNet)
+# ---------------------------------------------------------------------------
+MODEL_WIDTH = 224
+MODEL_DEPTH = 5
+EMBED_DIM = 112
+PROTOTYPE_TEMPERATURE = 0.14
+MODEL_DROPOUT = 0.14
+N_ROW_ORDER_DOMAINS = 6
+
+class GatedResidualBlock(nn.Module):
+    def __init__(self, width: int, dropout: float) -> None:
+        super().__init__()
+        self.norm = nn.LayerNorm(width)
+        self.gate = nn.Linear(width, width * 2)
+        self.out = nn.Linear(width, width)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        values, gates = self.gate(self.norm(x)).chunk(2, dim=-1)
+        update = values * F.silu(gates)
+        return x + self.dropout(self.out(update))
+
+class BinaryFirstTabularNet(nn.Module):
+    def __init__(self, input_dim: int, n_classes: int = 5, n_attack_classes: int = 4) -> None:
+        super().__init__()
+        self.stem = nn.Sequential(
+            nn.Linear(input_dim, MODEL_WIDTH),
+            nn.LayerNorm(MODEL_WIDTH),
+            nn.SiLU(),
+            nn.Dropout(MODEL_DROPOUT),
+        )
+        self.blocks = nn.Sequential(*[GatedResidualBlock(MODEL_WIDTH, MODEL_DROPOUT) for _ in range(MODEL_DEPTH)])
+        self.embed = nn.Sequential(
+            nn.LayerNorm(MODEL_WIDTH),
+            nn.Linear(MODEL_WIDTH, EMBED_DIM),
+            nn.LayerNorm(EMBED_DIM),
+        )
+        self.binary_head = nn.Sequential(
+            nn.Linear(EMBED_DIM, EMBED_DIM // 2),
+            nn.SiLU(),
+            nn.Dropout(MODEL_DROPOUT),
+            nn.Linear(EMBED_DIM // 2, 2),
+        )
+        self.attack_subtype_head = nn.Sequential(
+            nn.Linear(EMBED_DIM, EMBED_DIM),
+            nn.SiLU(),
+            nn.Dropout(MODEL_DROPOUT),
+            nn.Linear(EMBED_DIM, n_attack_classes),
+        )
+        self.domain_head = nn.Sequential(
+            nn.Linear(EMBED_DIM, EMBED_DIM // 2),
+            nn.SiLU(),
+            nn.Dropout(MODEL_DROPOUT),
+            nn.Linear(EMBED_DIM // 2, N_ROW_ORDER_DOMAINS),
+        )
+        self.prototypes = nn.Parameter(torch.randn(n_classes, EMBED_DIM) * 0.05)
+
+    def forward(self, x: torch.Tensor, grl_lambda: float = 0.0) -> dict[str, torch.Tensor]:
+        hidden = self.blocks(self.stem(x))
+        embedding = self.embed(hidden)
+        return {
+            "embedding": embedding,
+            "binary_logits": self.binary_head(embedding),
+            "attack_subtype_logits": self.attack_subtype_head(embedding),
+            "prototype_logits": self.prototype_logits(embedding),
+        }
+
+    def prototype_logits(self, embedding: torch.Tensor) -> torch.Tensor:
+        z = F.normalize(embedding, dim=-1)
+        proto = F.normalize(self.prototypes, dim=-1)
+        return z @ proto.T / PROTOTYPE_TEMPERATURE
+
+OpenWorldTabularNet = BinaryFirstTabularNet
+
+
+# ---------------------------------------------------------------------------
 # Reconstruction scorer (same as neural notebook)
 # ---------------------------------------------------------------------------
 class ReconScorer:
@@ -183,16 +265,18 @@ class ReconScorer:
 # Flow Tracker (unchanged logic)
 # ---------------------------------------------------------------------------
 class FlowTracker:
-    """Tracks network flows and computes CIC-IDS features."""
+    """Tracks network flows and exports them when finished (TCP FIN/RST or idle timeout)."""
 
-    def __init__(self):
+    def __init__(self, idle_timeout: float = 5.0):
         self.flows = defaultdict(lambda: {
             "fwd_packets": [], "bwd_packets": [],
             "fwd_timestamps": [], "bwd_timestamps": [],
             "fwd_header_lens": [], "bwd_header_lens": [],
             "init_fwd_win": None, "init_bwd_win": None,
             "ack_count": 0, "urg_count": 0, "start_time": None,
+            "last_active": None, "finished": False,
         })
+        self.idle_timeout = idle_timeout
         self.lock = Lock()
 
     def get_flow_key(self, pkt):
@@ -218,6 +302,7 @@ class FlowTracker:
             ts = time.time()
             if f["start_time"] is None:
                 f["start_time"] = ts
+            f["last_active"] = ts
             pkt_len = len(pkt)
             fwd = self.is_forward(pkt, key)
             hdr = 20
@@ -233,6 +318,9 @@ class FlowTracker:
                     f["init_fwd_win"] = win
                 elif not fwd and f["init_bwd_win"] is None:
                     f["init_bwd_win"] = win
+                # End flow on FIN or RST
+                if "F" in flags or "R" in flags:
+                    f["finished"] = True
             if fwd:
                 f["fwd_packets"].append(pkt_len)
                 f["fwd_timestamps"].append(ts)
@@ -242,12 +330,17 @@ class FlowTracker:
                 f["bwd_timestamps"].append(ts)
                 f["bwd_header_lens"].append(hdr)
 
-    def compute_features(self):
+    def pop_finished_flows(self) -> list:
+        now = time.time()
+        finished_keys = []
         with self.lock:
-            if not self.flows:
-                return None
-            all_features = []
-            for _, f in self.flows.items():
+            for key, f in self.flows.items():
+                if f["finished"] or (f["last_active"] is not None and (now - f["last_active"]) >= self.idle_timeout):
+                    finished_keys.append(key)
+            
+            features = []
+            for key in finished_keys:
+                f = self.flows.pop(key)
                 fp, bp = f["fwd_packets"], f["bwd_packets"]
                 ft, bt = f["fwd_timestamps"], f["bwd_timestamps"]
                 total = len(fp) + len(bp)
@@ -259,33 +352,33 @@ class FlowTracker:
                 iats = np.diff(all_ts) if len(all_ts) > 1 else [0]
                 fwd_iats = np.diff(sorted(ft)) if len(ft) > 1 else [0]
                 feat = {
+                    "_flow_key": f"{key[0]}:{key[1]} -> {key[2]}:{key[3]} (proto={key[4]})",
                     "Fwd Pkts/s": len(fp) / dur,
                     "Bwd Pkts/s": len(bp) / dur,
                     "Flow Pkts/s": total / dur,
                     "Flow Byts/s": (sum(fp) + sum(bp)) / dur,
-                    "Init Fwd Win Byts": f["init_fwd_win"] or 0,
-                    "Init Bwd Win Byts": f["init_bwd_win"] or 0,
+                    "Init Fwd Win Byts": f["init_fwd_win"] if f["init_fwd_win"] is not None else -1,
+                    "Init Bwd Win Byts": f["init_bwd_win"] if f["init_bwd_win"] is not None else -1,
                     "Fwd Pkt Len Max": max(fp) if fp else 0,
                     "Fwd Pkt Len Mean": np.mean(fp) if fp else 0,
                     "Fwd Pkt Len Std": np.std(fp) if len(fp) > 1 else 0,
-                    "Fwd Seg Size Min": min(fp) if fp else 0,
+                    "Fwd Seg Size Min": min(f["fwd_header_lens"]) if f["fwd_header_lens"] else 0,
                     "Bwd Pkt Len Max": max(bp) if bp else 0,
                     "Pkt Len Max": max(fp + bp) if (fp + bp) else 0,
                     "Pkt Len Std": np.std(fp + bp) if len(fp + bp) > 1 else 0,
                     "Fwd Header Len": sum(f["fwd_header_lens"]),
                     "Bwd Header Len": sum(f["bwd_header_lens"]),
-                    "Flow IAT Std": float(np.std(iats)),
-                    "Flow IAT Min": float(np.min(iats)),
-                    "Flow IAT Mean": float(np.mean(iats)),
-                    "Fwd IAT Tot": float(np.sum(fwd_iats)),
-                    "Fwd IAT Std": float(np.std(fwd_iats)),
+                    "Flow IAT Std": float(np.std(iats)) * 1e6,
+                    "Flow IAT Min": float(np.min(iats)) * 1e6,
+                    "Flow IAT Mean": float(np.mean(iats)) * 1e6,
+                    "Fwd IAT Tot": float(np.sum(fwd_iats)) * 1e6,
+                    "Fwd IAT Std": float(np.std(fwd_iats)) * 1e6,
                     "ACK Flag Cnt": f["ack_count"],
                     "URG Flag Cnt": f["urg_count"],
                     "Down/Up Ratio": len(bp) / len(fp) if len(fp) > 0 else 0,
                 }
-                all_features.append(feat)
-            self.flows.clear()
-            return all_features
+                features.append(feat)
+            return features
 
 
 # ---------------------------------------------------------------------------
@@ -297,6 +390,8 @@ class RealTimeDetector:
     def __init__(
         self,
         vae_path: str = "vae_full_model.pth",
+        classifier_path: str = "nn_classifier_model.pth",
+        nn_scaler_path: str = "nn_scaler.joblib",
         column_mapping_path: str = "column_min_max_mapping.csv",
         top_features_path: str = "top_features.joblib",
         recon_scorer_path: str = "anomaly_thresholds.joblib",
@@ -313,11 +408,15 @@ class RealTimeDetector:
         self.last_valid_features: np.ndarray | None = None
 
         self.vae: VAE | None = None
+        self.classifier: BinaryFirstTabularNet | None = None
+        self.nn_scaler: QuantileTransformer | None = None
         self.column_mapping: pd.DataFrame | None = None
         self.top_features: list | None = None
         self.recon_scorer: ReconScorer | None = None
 
-        self._load_artifacts(vae_path, column_mapping_path, top_features_path, recon_scorer_path)
+        self._load_artifacts(
+            vae_path, classifier_path, nn_scaler_path, column_mapping_path, top_features_path, recon_scorer_path
+        )
 
     # ------------------------------------------------------------------
     def _find(self, filename: str) -> Path:
@@ -327,7 +426,7 @@ class RealTimeDetector:
                 return p
         return Path(filename)  # fall back to CWD
 
-    def _load_artifacts(self, vae_path, col_map_path, top_feat_path, recon_path):
+    def _load_artifacts(self, vae_path, classifier_path, nn_scaler_path, col_map_path, top_feat_path, recon_path):
         # Column min/max mapping
         p = self._find(col_map_path)
         if p.exists():
@@ -354,6 +453,24 @@ class RealTimeDetector:
         else:
             print(f"⚠ VAE checkpoint not found: {p}")
 
+        # Classifier Scaler
+        p = self._find(nn_scaler_path)
+        if p.exists():
+            self.nn_scaler = joblib.load(p)
+            print(f"✓ Classifier scaler loaded ({type(self.nn_scaler).__name__})")
+        else:
+            print(f"⚠ Classifier scaler not found: {p}")
+
+        # Classifier Model
+        p = self._find(classifier_path)
+        if p.exists():
+            self.classifier = BinaryFirstTabularNet(input_dim=8, n_classes=5, n_attack_classes=4)
+            self.classifier.load_state_dict(torch.load(p, map_location=self.device))
+            self.classifier.to(self.device).eval()
+            print(f"✓ Classifier loaded     ({type(self.classifier).__name__}) → {self.device}")
+        else:
+            print(f"⚠ Classifier model not found: {p}")
+
         # Reconstruction scorer (saved as dict {"p5":…, "p95":…} inside anomaly_thresholds.joblib)
         p = self._find(recon_path)
         if p.exists():
@@ -364,12 +481,16 @@ class RealTimeDetector:
                 print(f"✓ Recon scorer loaded   (p5={rs['p5']}, p95={rs['p95']})")
             else:
                 print("⚠ recon_scorer key not found in thresholds file – scoring disabled")
+            if isinstance(obj, dict) and "threshold" in obj:
+                self.ood_threshold = float(obj["threshold"])
+                print(f"✓ OOD threshold loaded  (threshold={self.ood_threshold:.3f})")
         else:
             print(f"⚠ Thresholds file not found: {p}")
 
         # Initialise window buffer
         n_feat = len(self.top_features)
         self.window_buffer = np.zeros((WINDOW_SIZE, n_feat), dtype=np.float64)
+        self.window_fill_count = 0  # tracks cold-start; scoring starts after WINDOW_SIZE fills
 
     # ------------------------------------------------------------------
     def _scale(self, raw_vec: np.ndarray) -> np.ndarray:
@@ -385,28 +506,36 @@ class RealTimeDetector:
         return scaled
 
     # ------------------------------------------------------------------
-    def process_features(self, features_list: list) -> dict | None:
-        if not features_list:
+    def process_features(self, flow_feat: dict) -> dict | None:
+        if not flow_feat:
             return None
 
-        df = pd.DataFrame(features_list)
-        for feat in self.top_features:
-            if feat not in df.columns:
-                df[feat] = 0.0
-        df = df[self.top_features].fillna(0.0)
+        # Build feature vector from flow features dictionary
+        raw_vec = np.zeros(len(self.top_features), dtype=np.float64)
+        for i, feat in enumerate(self.top_features):
+            raw_vec[i] = flow_feat.get(feat, 0.0)
 
-        # Aggregate flows → single feature vector
-        current_raw = df.mean().values
-        self.last_valid_features = current_raw.copy()
+        self.last_valid_features = raw_vec.copy()
 
         # Scale and push into sliding window
-        current_scaled = self._scale(current_raw)
+        current_scaled = self._scale(raw_vec)
         self.window_buffer[:-1] = self.window_buffer[1:]
         self.window_buffer[-1] = current_scaled
+        self.window_fill_count += 1
 
-        result = {"num_flows": len(features_list), "raw_features": current_raw}
+        result = {
+            "raw_features": raw_vec,
+            "flow_key": flow_feat.get("_flow_key", "Unknown Flow")
+        }
 
         if self.vae is None:
+            return result
+
+        # Skip scoring until the window is fully filled (cold-start warmup)
+        if self.window_fill_count < WINDOW_SIZE:
+            remaining = WINDOW_SIZE - self.window_fill_count
+            result["warming_up"] = True
+            result["warmup_remaining"] = remaining
             return result
 
         with torch.no_grad():
@@ -425,9 +554,42 @@ class RealTimeDetector:
         # Recon score (normalised anomaly signal)
         recon_score = self.recon_scorer.score(mse_loss, kld_loss) if self.recon_scorer else mse_loss
 
-        # OOD attack score: pure reconstruction signal (no CatBoost needed)
-        attack_score = float(np.clip(recon_score, 0.0, 1.0))
+        # Construct raw features vector for classifier: [latent_0..latent_4, student_loss, kld_loss, mse_loss]
+        clf_raw = np.concatenate([latent, [student_loss, kld_loss, mse_loss]]).astype(np.float32)
+
+        # Scaler and neural classifier prediction
+        if self.nn_scaler is not None and self.classifier is not None:
+            clf_raw_2d = clf_raw.reshape(1, -1)
+            clf_scaled = self.nn_scaler.transform(clf_raw_2d).astype(np.float32)
+            np.clip(clf_scaled, -5.0, 5.0, out=clf_scaled)
+            
+            with torch.no_grad():
+                x_clf = torch.from_numpy(clf_scaled).to(self.device)
+                outputs = self.classifier(x_clf)
+                binary_prob = float(torch.softmax(outputs["binary_logits"], dim=1)[:, 1].cpu().item())
+                subtype_prob = torch.softmax(outputs["attack_subtype_logits"], dim=1).squeeze(0).cpu().numpy()
+        else:
+            binary_prob = 0.0
+            subtype_prob = np.zeros(4, dtype=np.float32)
+
+        # OOD attack score: fusion of classifier prediction and reconstruction score
+        if self.classifier is not None:
+            w = float(RECON_OOD_WEIGHT)
+            attack_score = float(np.clip((1.0 - w) * binary_prob + w * recon_score, 0.0, 1.0))
+        else:
+            attack_score = float(np.clip(recon_score, 0.0, 1.0))
+
         is_attack = attack_score >= self.ood_threshold
+
+        # Determine classification
+        pred_class_name = "Benign"
+        if is_attack:
+            if self.classifier is not None:
+                # Class mapping: index 0..3 of subtype_prob maps to class 1..4 in ATTACK_CLASS_NAMES
+                pred_idx = int(np.argmax(subtype_prob)) + 1
+                pred_class_name = ATTACK_CLASS_NAMES.get(pred_idx, f"Attack Class {pred_idx}")
+            else:
+                pred_class_name = "Attack"
 
         result.update({
             "latent": latent,
@@ -435,8 +597,11 @@ class RealTimeDetector:
             "student_loss": student_loss,
             "kld_loss": kld_loss,
             "recon_score": recon_score,
+            "binary_prob": binary_prob,
             "attack_score": attack_score,
             "is_attack": is_attack,
+            "pred_class": pred_class_name,
+            "subtype_probs": subtype_prob.tolist(),
         })
         return result
 
@@ -446,17 +611,38 @@ class RealTimeDetector:
 
     def start_capture(self, interface=None):
         if not SCAPY_AVAILABLE:
-            print("⚠ scapy unavailable – cannot capture packets.")
+            print("⚠ scapy unavailable – cannot capture packets. Run: pip install scapy")
             return None
         self.capturing = True
 
         def _run():
+            import sys as _sys
             print(f"Capturing on: {interface or 'default interface'}")
             try:
-                sniff(iface=interface, prn=self.packet_callback, store=False,
-                      stop_filter=lambda _: not self.capturing)
+                if _sys.platform == "win32":
+                    # On Windows, raw packet capture needs EITHER:
+                    #   (a) Npcap installed  → works for any user
+                    #   (b) Run as Administrator  → uses Windows native L3 raw socket
+                    # We try Npcap first (scapy auto-detects it), then fall back to L3 raw.
+                    sock = scapy_conf.L3socket(iface=interface)
+                    sniff(opened_socket=sock, prn=self.packet_callback, store=False,
+                          stop_filter=lambda _: not self.capturing)
+                else:
+                    sniff(iface=interface, prn=self.packet_callback, store=False,
+                          stop_filter=lambda _: not self.capturing)
             except PermissionError:
-                print("⚠ Permission denied – run with admin/sudo.")
+                print("⚠ Permission denied – run as Administrator (Windows) or with sudo (Linux).")
+                self.capturing = False
+            except OSError as e:
+                msg = str(e)
+                if "administrator" in msg.lower() or "10013" in msg:
+                    print("⚠ Raw socket access denied.")
+                    print("   Fix option 1 (recommended): Install Npcap → https://npcap.com")
+                    print("   Fix option 2: Re-run this script as Administrator")
+                elif "winpcap" in msg.lower() or "npcap" in msg.lower():
+                    print("⚠ Npcap not found. Install from https://npcap.com (free, lightweight).")
+                else:
+                    print(f"Capture error: {e}")
                 self.capturing = False
             except Exception as e:
                 print(f"Capture error: {e}")
@@ -467,11 +653,11 @@ class RealTimeDetector:
         return t
 
     # ------------------------------------------------------------------
-    def run(self, interface=None, interval: int = 3, duration: int = 300):
+    def run(self, interface=None, poll_interval: float = 0.1, duration: int = 3600):
         print("=" * 65)
         print("Real-Time Network Traffic Detection (VAE Neural OOD)")
         print("=" * 65)
-        print(f"  Capture interval : {interval}s  |  Duration: {duration}s")
+        print(f"  Poll interval    : {poll_interval}s  |  Duration: {duration}s")
         print(f"  Window size      : {WINDOW_SIZE} steps")
         print(f"  OOD threshold    : {self.ood_threshold:.3f}")
         print(f"  Device           : {self.device}")
@@ -482,34 +668,38 @@ class RealTimeDetector:
         total_records = 0
         total_benign = 0
         total_attacks = 0
-        attack_classes: dict[float, int] = defaultdict(int)
+        attack_classes = defaultdict(int)
         start = time.time()
 
         try:
             while (time.time() - start) < duration:
-                time.sleep(interval)
-                features_list = self.flow_tracker.compute_features()
-                if not features_list:
-                    print(f"[{time.strftime('%H:%M:%S')}] No flows captured")
-                    continue
+                time.sleep(poll_interval)
+                features_list = self.flow_tracker.pop_finished_flows()
+                for flow_feat in features_list:
+                    result = self.process_features(flow_feat)
+                    if result is None:
+                        continue
 
-                result = self.process_features(features_list)
-                if result is None:
-                    continue
+                    if result.get("warming_up"):
+                        print(f"[{time.strftime('%H:%M:%S')}] Warming up window buffer... {result['warmup_remaining']} steps remaining. (Flow: {result.get('flow_key')})")
+                        continue
 
-                total_records += 1
-                elapsed = time.time() - start
-                remaining = duration - elapsed
-                print(f"\n[Record {total_records}] {time.strftime('%H:%M:%S')} | ⏱ {remaining:.0f}s remaining")
-                print(f"  Flows: {result['num_flows']}  |  recon_score={result.get('recon_score', 'n/a'):.4f}  attack_score={result.get('attack_score', 'n/a'):.4f}")
+                    total_records += 1
+                    elapsed = time.time() - start
+                    remaining = duration - elapsed
+                    print(f"\n[Record {total_records}] {time.strftime('%H:%M:%S')} | ⏱ {remaining:.0f}s remaining")
+                    print(f"  Flow: {result.get('flow_key')}")
+                    print(f"  Metrics: recon={result.get('recon_score', 0.0):.4f} | clf_prob={result.get('binary_prob', 0.0):.4f} | attack_score={result.get('attack_score', 0.0):.4f}")
 
-                if result.get("is_attack"):
-                    total_attacks += 1
-                    sc = result.get("attack_score", 0.0)
-                    print(f"  ⚠️  ATTACK DETECTED  (score={sc:.3f} ≥ threshold={self.ood_threshold:.3f})")
-                else:
-                    total_benign += 1
-                    print(f"  ✓  Benign  (score={result.get('attack_score', 0.0):.3f})")
+                    if result.get("is_attack"):
+                        total_attacks += 1
+                        sc = result.get("attack_score", 0.0)
+                        cls = result.get("pred_class", "Attack")
+                        print(f"  ⚠️  ATTACK DETECTED: {cls}  (score={sc:.3f} ≥ threshold={self.ood_threshold:.3f})")
+                        attack_classes[cls] += 1
+                    else:
+                        total_benign += 1
+                        print(f"  ✓  Benign  (score={result.get('attack_score', 0.0):.3f})")
 
         except KeyboardInterrupt:
             print("\n\nStopped early.")
@@ -522,7 +712,7 @@ class RealTimeDetector:
         print("\n" + "!" * 65)
         print(f"DEPLOYMENT REPORT  {time.strftime('%Y-%m-%d %H:%M:%S')}")
         print("!" * 65)
-        print(f"\nTotal intervals : {total}")
+        print(f"\nTotal flows     : {total}")
         b_pct = 100 * benign / max(total, 1)
         a_pct = 100 * attacks / max(total, 1)
         print(f"  ✓ Benign       : {benign} ({b_pct:.1f}%)")
@@ -530,8 +720,7 @@ class RealTimeDetector:
         if attack_classes:
             print("\nAttack breakdown:")
             for cls, cnt in sorted(attack_classes.items()):
-                name = ATTACK_CLASS_NAMES.get(int(cls), f"Class {cls}")
-                print(f"  {name}: {cnt}")
+                print(f"  {cls}: {cnt}")
         print("!" * 65)
 
 
@@ -540,19 +729,23 @@ def main():
     import argparse
     p = argparse.ArgumentParser(description="Real-time network anomaly detection (VAE neural)")
     p.add_argument("-i", "--interface", default=None, help="Network interface")
-    p.add_argument("-t", "--interval", type=int, default=3, help="Capture interval (s)")
-    p.add_argument("-d", "--duration", type=int, default=300, help="Total duration (s)")
+    p.add_argument("-t", "--interval", type=float, default=0.1, help="Polling interval for finished flows (s)")
+    p.add_argument("-d", "--duration", type=int, default=3600, help="Total duration (s)")
     p.add_argument("--vae", default="vae_full_model.pth", help="VAE checkpoint path")
+    p.add_argument("--classifier", default="nn_classifier_model.pth", help="Classifier checkpoint path")
+    p.add_argument("--scaler", default="nn_scaler.joblib", help="Scaler path")
     p.add_argument("--threshold", type=float, default=DEFAULT_OOD_THRESHOLD, help="OOD threshold")
     p.add_argument("--device", default="cpu", help="Torch device (cpu/cuda)")
     args = p.parse_args()
 
     detector = RealTimeDetector(
         vae_path=args.vae,
+        classifier_path=args.classifier,
+        nn_scaler_path=args.scaler,
         ood_threshold=args.threshold,
         device=args.device,
     )
-    detector.run(interface=args.interface, interval=args.interval, duration=args.duration)
+    detector.run(interface=args.interface, poll_interval=args.interval, duration=args.duration)
 
 
 if __name__ == "__main__":

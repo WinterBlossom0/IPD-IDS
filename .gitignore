@@ -1,9 +1,30 @@
 .vscode/
-datasets/
-models/
-*.json
-*.txt
-*.cbm
-*.model
+node_modules/
+.venv/
+__pycache__/
+*.log
+
+# Ignore large datasets and numpy arrays
+combined_*.csv
+df_*.csv
+*.npy
+
+# Ignore temporary/ablation models (keep full models)
+vae_no_student_model.pth
+vae_no_time_adv_model.pth
+
+# Keep main model weights and metadata
+!vae_full_model.pth
+!nn_classifier_model.pth
+!nn_scaler.joblib
+!anomaly_thresholds.joblib
+!top_features.joblib
+!column_min_max_mapping.csv
+!*metrics.csv
+!*ablation*.csv
+
+# Python/Generic ignores
 *.pkl
-node_modules
+*.model
+*.cbm
+*.json
