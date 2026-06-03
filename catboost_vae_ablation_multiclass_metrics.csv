@@ -1,6 +1,0 @@
-bal_acc,macro_f1,hier_f1,subtype_f1,mode,rows,experiment,variant,feature_set,train_file,final_ood_file,n_features
-0.9982855269015196,0.9887033958535996,0.8978680890504083,0.9963798679178928,in_dist,349524,full__compressed_plus_losses,full,compressed + losses,df_train_full.csv,df_test_full.csv,8
-0.811528087782054,0.8762217775438274,0.8163687059745327,0.8503593715464016,in_dist,349524,full__compressed_only,full,compressed only,df_train_full.csv,df_test_full.csv,5
-0.9982555152580078,0.9877389507368239,0.8978349262138547,0.9964056884051724,in_dist,349524,full__full_dataset,full,full dataset,df_train_full.csv,df_test_full.csv,8
-0.9911576652402273,0.984613114042248,0.8944262243692703,0.9906143412075388,in_dist,349524,no_time_adv__compressed_plus_losses,no_time_adv,compressed + losses,df_train_no_time_adv.csv,df_test_no_time_adv.csv,8
-0.9967480663853927,0.9876279764444661,0.8968450587076016,0.9937897263853458,in_dist,349524,no_student__compressed_plus_losses,no_student,compressed + losses,df_train_no_student.csv,df_test_no_student.csv,8

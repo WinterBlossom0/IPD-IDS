@@ -226,11 +226,26 @@ def prepare_features(df_raw: pd.DataFrame) -> np.ndarray:
     return X_normalized.values.astype(np.float64)
 
 
-def benchmark_vae_inference(variant_name: str, batch_size: int, device_name: str, input_file: str) -> pd.DataFrame:
+SAMPLE_LIMIT = 50_000
+
+
+def benchmark_vae_inference(
+    variant_name: str,
+    batch_size: int,
+    device_name: str,
+    input_file: str,
+    sample_limit: int = SAMPLE_LIMIT,
+) -> pd.DataFrame:
     input_path = find_data_file(input_file)
-    df_raw = pd.read_csv(input_path)
+    df_raw = pd.read_csv(input_path, nrows=sample_limit + WINDOW_SIZE)
+    if len(df_raw) > sample_limit + WINDOW_SIZE:
+        df_raw = df_raw.iloc[: sample_limit + WINDOW_SIZE]
     X_array = prepare_features(df_raw)
     X_windowed = make_windows(X_array, WINDOW_SIZE)
+    # Hard-cap windows so we never exceed sample_limit
+    if len(X_windowed) > sample_limit:
+        X_windowed = X_windowed[:sample_limit]
+    print(f"[benchmark] variant={variant_name} | device={device_name} | batch={batch_size} | windows={len(X_windowed):,}")
 
     device = torch.device(device_name)
     model_path = artifact_path(f"vae_{variant_name}_model.pth")
@@ -257,7 +272,7 @@ def benchmark_vae_inference(variant_name: str, batch_size: int, device_name: str
             del batch, mu, logvar, recon
     elapsed = time.perf_counter() - start_time
 
-    sample_rows = len(df_raw)
+    sample_rows = len(X_windowed)
     windows = len(X_windowed)
     speed_df = pd.DataFrame([
         {
@@ -290,9 +305,10 @@ def benchmark_vae_inference(variant_name: str, batch_size: int, device_name: str
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Benchmark CIC-IDS VAE compression inference speed.")
     parser.add_argument("--variant", default="full", help="VAE variant name, e.g. full, no_time_adv, no_student.")
-    parser.add_argument("--batch-size", type=int, default=1, help="Benchmark batch size. Use 1 for per-flow latency.")
-    parser.add_argument("--device", default="cpu", help="Torch device for benchmarking, usually cpu.")
+    parser.add_argument("--batch-size", type=int, default=1, help="Benchmark batch size. Default 1 for per-flow latency.")
+    parser.add_argument("--device", default="cpu", help="Torch device. Defaults to cpu.")
     parser.add_argument("--input-file", default="combined_test.csv", help="Raw CIC test CSV with Label column.")
+    parser.add_argument("--sample-limit", type=int, default=SAMPLE_LIMIT, help="Max windows to benchmark (default 50000).")
     return parser.parse_args()
 
 
@@ -303,5 +319,6 @@ if __name__ == "__main__":
         batch_size=args.batch_size,
         device_name=args.device,
         input_file=args.input_file,
+        sample_limit=args.sample_limit,
     )
-    print(result)
+    print(result.to_string(index=False))
