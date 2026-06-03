@@ -406,6 +406,7 @@ class RealTimeDetector:
         # Sliding window buffer (WINDOW_SIZE × n_features)
         self.window_buffer: np.ndarray | None = None
         self.last_valid_features: np.ndarray | None = None
+        self.inference_times: list[float] = []
 
         self.vae: VAE | None = None
         self.classifier: BinaryFirstTabularNet | None = None
@@ -538,6 +539,7 @@ class RealTimeDetector:
             result["warmup_remaining"] = remaining
             return result
 
+        start_t = time.perf_counter()
         with torch.no_grad():
             x = torch.from_numpy(self.window_buffer).unsqueeze(0).to(self.device)  # (1, W, F)
             recon, mu, logvar = self.vae(x, deterministic=True)
@@ -603,6 +605,7 @@ class RealTimeDetector:
             "pred_class": pred_class_name,
             "subtype_probs": subtype_prob.tolist(),
         })
+        self.inference_times.append(time.perf_counter() - start_t)
         return result
 
     # ------------------------------------------------------------------
@@ -721,6 +724,10 @@ class RealTimeDetector:
             print("\nAttack breakdown:")
             for cls, cnt in sorted(attack_classes.items()):
                 print(f"  {cls}: {cnt}")
+        if self.inference_times:
+            avg_ms = np.mean(self.inference_times) * 1000
+            print(f"\nPipeline Performance:")
+            print(f"  Avg inference latency: {avg_ms:.2f} ms")
         print("!" * 65)
 
 
