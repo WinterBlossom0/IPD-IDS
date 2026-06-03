@@ -1,2 +1,2 @@
-sample_rows,seconds,rows_per_second,milliseconds_per_row
-1048584,3572.8642594999983,293.4855409667154,3.4073228844804024
+variant,input_file,device,batch_size,sample_rows,compressed_windows,seconds,rows_per_second,windows_per_second,milliseconds_per_row,milliseconds_per_window
+full,C:\Users\vihaa\OneDrive\Documents\IPD-IDS\combined_test.csv,cpu,1,50000,50000,154.11765900000137,324.4274557790912,324.4274557790912,3.0823531800000272,3.0823531800000272
