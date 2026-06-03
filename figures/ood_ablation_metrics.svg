@@ -1,55 +1,51 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="3.45in" height="2.15in" viewBox="0 0 345 215">
-<rect width="345" height="215" fill="#ffffff"/>
-<text x="10" y="16" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#111827">Final OOD metrics</text>
-<text x="10" y="29" font-family="Arial, sans-serif" font-size="7.2" fill="#4b5563">CL main, C comp only, ACF all comp, -T no time, -S no student</text>
-<text x="76" y="38" text-anchor="middle" font-family="Arial, sans-serif" font-size="7.5" font-weight="700" fill="#374151">Atk R</text>
-<text x="144" y="38" text-anchor="middle" font-family="Arial, sans-serif" font-size="7.5" font-weight="700" fill="#374151">Unseen</text>
-<text x="212" y="38" text-anchor="middle" font-family="Arial, sans-serif" font-size="7.5" font-weight="700" fill="#374151">F1</text>
-<text x="280" y="38" text-anchor="middle" font-family="Arial, sans-serif" font-size="7.5" font-weight="700" fill="#374151">Spec</text>
-<text x="34" y="58" text-anchor="end" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#2563eb">CL</text>
-<rect x="42" y="42" width="64" height="24" rx="2" fill="#2a67eb" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="74" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#ffffff">98</text>
-<rect x="110" y="42" width="64" height="24" rx="2" fill="#2a67eb" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="142" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#ffffff">98</text>
-<rect x="178" y="42" width="64" height="24" rx="2" fill="#2966eb" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="210" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#ffffff">98</text>
-<rect x="246" y="42" width="64" height="24" rx="2" fill="#2563eb" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="278" y="58" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#ffffff">100</text>
-<text x="34" y="87" text-anchor="end" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#f97316">C</text>
-<rect x="42" y="71" width="64" height="24" rx="2" fill="#c9d8f8" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="74" y="87" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#111827">22</text>
-<rect x="110" y="71" width="64" height="24" rx="2" fill="#c9d8f8" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="142" y="87" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#111827">22</text>
-<rect x="178" y="71" width="64" height="24" rx="2" fill="#95b3f4" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="210" y="87" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#111827">47</text>
-<rect x="246" y="71" width="64" height="24" rx="2" fill="#2563eb" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="278" y="87" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#ffffff">100</text>
-<text x="34" y="116" text-anchor="end" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#16a34a">ACF</text>
-<rect x="42" y="100" width="64" height="24" rx="2" fill="#f8fafc" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="74" y="116" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#111827">0</text>
-<rect x="110" y="100" width="64" height="24" rx="2" fill="#f8fafc" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="142" y="116" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#111827">0</text>
-<rect x="178" y="100" width="64" height="24" rx="2" fill="#c2d3f8" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="210" y="116" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#111827">26</text>
-<rect x="246" y="100" width="64" height="24" rx="2" fill="#2563eb" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="278" y="116" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#ffffff">100</text>
-<text x="34" y="145" text-anchor="end" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#7c3aed">-T</text>
-<rect x="42" y="129" width="64" height="24" rx="2" fill="#f8fafc" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="74" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#111827">0</text>
-<rect x="110" y="129" width="64" height="24" rx="2" fill="#f8fafc" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="142" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#111827">0</text>
-<rect x="178" y="129" width="64" height="24" rx="2" fill="#c9d8f8" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="210" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#111827">22</text>
-<rect x="246" y="129" width="64" height="24" rx="2" fill="#477bee" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="278" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#ffffff">84</text>
-<text x="34" y="174" text-anchor="end" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#dc2626">-S</text>
-<rect x="42" y="158" width="64" height="24" rx="2" fill="#f8fafc" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="74" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#111827">0</text>
-<rect x="110" y="158" width="64" height="24" rx="2" fill="#f8fafc" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="142" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#111827">0</text>
-<rect x="178" y="158" width="64" height="24" rx="2" fill="#c2d3f8" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="210" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#111827">26</text>
-<rect x="246" y="158" width="64" height="24" rx="2" fill="#2563eb" stroke="#e5e7eb" stroke-width="0.6"/>
-<text x="278" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.2" font-weight="700" fill="#ffffff">100</text>
-<text x="42" y="199" font-family="Arial, sans-serif" font-size="7.2" fill="#6b7280">Cell values are percentages; darker cells indicate higher metric values.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="3.45in" height="2.35in" viewBox="0 0 345 235">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="12" y="17" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#111827">Final OOD detection</text>
+<text x="12" y="30" font-family="Arial, sans-serif" font-size="7.4" fill="#4b5563">Only compressed+loss features retain high unseen-attack detection.</text>
+<line x1="82" y1="50" x2="82" y2="190" stroke="#e5e7eb" stroke-width="0.7"/>
+<text x="82" y="218" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#6b7280">0</text>
+<line x1="143.25" y1="50" x2="143.25" y2="190" stroke="#e5e7eb" stroke-width="0.7"/>
+<text x="143.25" y="218" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#6b7280">25</text>
+<line x1="204.5" y1="50" x2="204.5" y2="190" stroke="#e5e7eb" stroke-width="0.7"/>
+<text x="204.5" y="218" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#6b7280">50</text>
+<line x1="265.75" y1="50" x2="265.75" y2="190" stroke="#e5e7eb" stroke-width="0.7"/>
+<text x="265.75" y="218" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#6b7280">75</text>
+<line x1="327" y1="50" x2="327" y2="190" stroke="#e5e7eb" stroke-width="0.7"/>
+<text x="327" y="218" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#6b7280">100</text>
+<line x1="82" y1="190" x2="327" y2="190" stroke="#9ca3af" stroke-width="0.8"/>
+<rect x="82" y="39" width="9" height="5" rx="2" fill="#2563eb"/>
+<text x="96" y="45" font-family="Arial, sans-serif" font-size="7.4" fill="#374151">Attack recall</text>
+<rect x="176" y="39" width="9" height="5" rx="2" fill="#059669"/>
+<text x="190" y="45" font-family="Arial, sans-serif" font-size="7.4" fill="#374151">Macro F1</text>
+<text x="74" y="70" text-anchor="end" font-family="Arial, sans-serif" font-size="7.8" font-weight="700" fill="#1f4e79">CL  comp+loss</text>
+<line x1="82" y1="62" x2="327" y2="62" stroke="#f3f4f6" stroke-width="0.8"/>
+<rect x="82" y="63" width="239" height="5.5" rx="2.5" fill="#2563eb"/>
+<rect x="82" y="73" width="241" height="5.5" rx="2.5" fill="#059669"/>
+<text x="302.9514309145" y="68.3" text-anchor="end" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">98</text>
+<text x="304.636378899153" y="78.3" text-anchor="end" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">98</text>
+<text x="74" y="97" text-anchor="end" font-family="Arial, sans-serif" font-size="7.8" font-weight="700" fill="#b45f06">C  comp only</text>
+<line x1="82" y1="89" x2="327" y2="89" stroke="#f3f4f6" stroke-width="0.8"/>
+<rect x="82" y="90" width="54" height="5.5" rx="2.5" fill="#2563eb"/>
+<rect x="82" y="100" width="115" height="5.5" rx="2.5" fill="#059669"/>
+<text x="140.405416566096" y="95.3" text-anchor="start" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">22</text>
+<text x="200.864085092923" y="105.3" text-anchor="start" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">47</text>
+<text x="74" y="124" text-anchor="end" font-family="Arial, sans-serif" font-size="7.8" font-weight="700" fill="#38761d">ACF  all comp</text>
+<line x1="82" y1="116" x2="327" y2="116" stroke="#f3f4f6" stroke-width="0.8"/>
+<rect x="82" y="117" width="1" height="5.5" rx="2.5" fill="#2563eb"/>
+<rect x="82" y="127" width="63" height="5.5" rx="2.5" fill="#059669"/>
+<text x="86" y="122.3" text-anchor="start" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">0</text>
+<text x="148.718303313265" y="132.3" text-anchor="start" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">26</text>
+<text x="74" y="151" text-anchor="end" font-family="Arial, sans-serif" font-size="7.8" font-weight="700" fill="#674ea7">-T  no time</text>
+<line x1="82" y1="143" x2="327" y2="143" stroke="#f3f4f6" stroke-width="0.8"/>
+<rect x="82" y="144" width="1" height="5.5" rx="2.5" fill="#2563eb"/>
+<rect x="82" y="154" width="55" height="5.5" rx="2.5" fill="#059669"/>
+<text x="86" y="149.3" text-anchor="start" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">0</text>
+<text x="140.833744416693" y="159.3" text-anchor="start" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">22</text>
+<text x="74" y="178" text-anchor="end" font-family="Arial, sans-serif" font-size="7.8" font-weight="700" fill="#990000">-S  no student</text>
+<line x1="82" y1="170" x2="327" y2="170" stroke="#f3f4f6" stroke-width="0.8"/>
+<rect x="82" y="171" width="1" height="5.5" rx="2.5" fill="#2563eb"/>
+<rect x="82" y="181" width="63" height="5.5" rx="2.5" fill="#059669"/>
+<text x="86" y="176.3" text-anchor="start" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">0</text>
+<text x="148.721666060009" y="186.3" text-anchor="start" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">26</text>
+<text x="204.5" y="231" text-anchor="middle" font-family="Arial, sans-serif" font-size="7.4" fill="#374151">Metric value (%)</text>
 </svg>

@@ -1,34 +1,40 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="3.45in" height="2.15in" viewBox="0 0 345 215">
-<rect width="345" height="215" fill="#ffffff"/>
-<text x="10" y="16" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#111827">Drop from CL baseline</text>
-<text x="10" y="29" font-family="Arial, sans-serif" font-size="7.2" fill="#4b5563">Bars show metric delta vs. primary compressed + losses.</text>
-<line x1="60" y1="40" x2="60" y2="169" stroke="#e5e7eb" stroke-width="0.7"/>
-<text x="60" y="182" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#6b7280">-1</text>
-<line x1="182.5" y1="40" x2="182.5" y2="169" stroke="#e5e7eb" stroke-width="0.7"/>
-<text x="182.5" y="182" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#6b7280">-0.5</text>
-<line x1="305" y1="40" x2="305" y2="169" stroke="#e5e7eb" stroke-width="0.7"/>
-<text x="305" y="182" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#6b7280">0</text>
-<line x1="305" y1="40" x2="305" y2="169" stroke="#111827" stroke-width="0.8"/>
-<text x="45" y="55" text-anchor="end" font-family="Arial, sans-serif" font-size="8.5" font-weight="700" fill="#f97316">C</text>
-<rect x="120.453985651596" y="44" width="184.546014348404" height="8" rx="1.5" fill="#2563eb"/>
-<text x="116.453985651596" y="51" text-anchor="end" font-family="Arial, sans-serif" font-size="6.6" fill="#111827">-0.75</text>
-<rect x="179.22770619377" y="56" width="125.77229380623" height="8" rx="1.5" fill="#059669"/>
-<text x="175.22770619377" y="63" text-anchor="end" font-family="Arial, sans-serif" font-size="6.6" fill="#111827">-0.51</text>
-<text x="45" y="86" text-anchor="end" font-family="Arial, sans-serif" font-size="8.5" font-weight="700" fill="#16a34a">ACF</text>
-<rect x="66.0485690855001" y="75" width="238.9514309145" height="8" rx="1.5" fill="#2563eb"/>
-<text x="62.0485690855001" y="82" text-anchor="end" font-family="Arial, sans-serif" font-size="6.6" fill="#111827">-0.98</text>
-<rect x="127.081924414111" y="87" width="177.918075585889" height="8" rx="1.5" fill="#059669"/>
-<text x="123.081924414111" y="94" text-anchor="end" font-family="Arial, sans-serif" font-size="6.6" fill="#111827">-0.73</text>
-<text x="45" y="117" text-anchor="end" font-family="Arial, sans-serif" font-size="8.5" font-weight="700" fill="#7c3aed">-T</text>
-<rect x="66.0485690855001" y="106" width="238.9514309145" height="8" rx="1.5" fill="#2563eb"/>
-<text x="62.0485690855001" y="113" text-anchor="end" font-family="Arial, sans-serif" font-size="6.6" fill="#111827">-0.98</text>
-<rect x="119.19736551754" y="118" width="185.80263448246" height="8" rx="1.5" fill="#059669"/>
-<text x="115.19736551754" y="125" text-anchor="end" font-family="Arial, sans-serif" font-size="6.6" fill="#111827">-0.76</text>
-<text x="45" y="148" text-anchor="end" font-family="Arial, sans-serif" font-size="8.5" font-weight="700" fill="#dc2626">-S</text>
-<rect x="66.0485690855001" y="137" width="238.9514309145" height="8" rx="1.5" fill="#2563eb"/>
-<text x="62.0485690855001" y="144" text-anchor="end" font-family="Arial, sans-serif" font-size="6.6" fill="#111827">-0.98</text>
-<rect x="127.085287160855" y="149" width="177.914712839145" height="8" rx="1.5" fill="#059669"/>
-<text x="123.085287160855" y="156" text-anchor="end" font-family="Arial, sans-serif" font-size="6.6" fill="#111827">-0.73</text>
-<rect x="56" y="191" width="8" height="8" fill="#2563eb"/><text x="68" y="198" font-family="Arial, sans-serif" font-size="7" fill="#374151">Attack recall</text>
-<rect x="143" y="191" width="8" height="8" fill="#059669"/><text x="155" y="198" font-family="Arial, sans-serif" font-size="7" fill="#374151">Macro F1</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="3.45in" height="2.35in" viewBox="0 0 345 235">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="12" y="17" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#111827">Metric retained after ablation</text>
+<text x="12" y="30" font-family="Arial, sans-serif" font-size="7.4" fill="#4b5563">Bars show the percentage of CL performance retained.</text>
+<line x1="82" y1="50" x2="82" y2="184" stroke="#e5e7eb" stroke-width="0.7"/>
+<text x="82" y="218" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#6b7280">0</text>
+<line x1="143.25" y1="50" x2="143.25" y2="184" stroke="#e5e7eb" stroke-width="0.7"/>
+<text x="143.25" y="218" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#6b7280">25</text>
+<line x1="204.5" y1="50" x2="204.5" y2="184" stroke="#e5e7eb" stroke-width="0.7"/>
+<text x="204.5" y="218" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#6b7280">50</text>
+<line x1="265.75" y1="50" x2="265.75" y2="184" stroke="#e5e7eb" stroke-width="0.7"/>
+<text x="265.75" y="218" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#6b7280">75</text>
+<line x1="327" y1="50" x2="327" y2="184" stroke="#e5e7eb" stroke-width="0.7"/>
+<text x="327" y="218" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#6b7280">100</text>
+<rect x="82" y="43" width="9" height="5" rx="2" fill="#2563eb"/>
+<text x="96" y="49" font-family="Arial, sans-serif" font-size="7.4" fill="#374151">Recall retained</text>
+<rect x="182" y="43" width="9" height="5" rx="2" fill="#059669"/>
+<text x="196" y="49" font-family="Arial, sans-serif" font-size="7.4" fill="#374151">F1 retained</text>
+<text x="74" y="74" text-anchor="end" font-family="Arial, sans-serif" font-size="7.8" font-weight="700" fill="#b45f06">C  comp only</text>
+<rect x="82" y="64" width="56" height="6" rx="2.5" fill="#2563eb"/>
+<rect x="82" y="76" width="117" height="6" rx="2.5" fill="#059669"/>
+<text x="141.782578943681" y="70" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">23</text>
+<text x="202.946992705371" y="82" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">48</text>
+<text x="74" y="107" text-anchor="end" font-family="Arial, sans-serif" font-size="7.8" font-weight="700" fill="#38761d">ACF  all comp</text>
+<rect x="82" y="97" width="1" height="6" rx="2.5" fill="#2563eb"/>
+<rect x="82" y="109" width="64" height="6" rx="2.5" fill="#059669"/>
+<text x="86" y="103" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">0</text>
+<text x="149.855616436904" y="115" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">26</text>
+<text x="74" y="140" text-anchor="end" font-family="Arial, sans-serif" font-size="7.8" font-weight="700" fill="#674ea7">-T  no time</text>
+<rect x="82" y="130" width="1" height="6" rx="2.5" fill="#2563eb"/>
+<rect x="82" y="142" width="56" height="6" rx="2.5" fill="#059669"/>
+<text x="86" y="136" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">0</text>
+<text x="141.82808153758" y="148" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">23</text>
+<text x="74" y="173" text-anchor="end" font-family="Arial, sans-serif" font-size="7.8" font-weight="700" fill="#990000">-S  no student</text>
+<rect x="82" y="163" width="1" height="6" rx="2.5" fill="#2563eb"/>
+<rect x="82" y="175" width="64" height="6" rx="2.5" fill="#059669"/>
+<text x="86" y="169" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">0</text>
+<text x="149.859040162594" y="181" font-family="Arial, sans-serif" font-size="6.6" font-weight="700" fill="#111827">26</text>
+<text x="204.5" y="231" text-anchor="middle" font-family="Arial, sans-serif" font-size="7.4" fill="#374151">Share of CL performance retained (%)</text>
 </svg>
