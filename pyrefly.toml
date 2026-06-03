@@ -1,0 +1,26 @@
+project-includes = [
+  "cic_ids_vae_benchmark.py",
+  "realtime_capture.py",
+  "read_top_features.py",
+  "test_weight_strategies.py",
+]
+project-excludes = [
+  "**/__pycache__",
+  "**/.venv/**",
+  "**/catboost_info/**",
+  "**/LightGBM/**",
+]
+use-ignore-files = true
+search-path = ["."]
+python-platform = "linux"
+python-version = "3.12"
+python-interpreter-path = ".venv/bin/python3"
+preset = "default"
+check-unannotated-defs = true
+infer-return-types = "checked"
+ignore-missing-imports = [
+  "catboost",
+  "lightgbm",
+  "xgboost",
+  "shap",
+]

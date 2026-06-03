@@ -1,0 +1,4 @@
+feature_set,train_seconds,balanced_binary_accuracy
+compressed + losses,536.0814020633698,0.5012251848842197
+full dataset,521.4064087867737,0.501204399645619
+compressed only,519.6909289360046,0.4999806004439727
