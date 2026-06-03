@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="700" viewBox="0 0 1320 700">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="300" y="42" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#111827">Ablation impact relative to primary compressed + losses</text>
+<text x="300" y="72" font-family="Arial, sans-serif" font-size="15" fill="#4b5563">Negative values show how much performance drops when a component or feature view is removed.</text>
+<line x1="770" y1="96" x2="770" y2="504" stroke="#111827" stroke-width="1.5"/>
+<line x1="340" y1="96" x2="340" y2="504" stroke="#e5e7eb"/>
+<text x="340" y="532" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#6b7280">-1</text>
+<line x1="447.5" y1="96" x2="447.5" y2="504" stroke="#e5e7eb"/>
+<text x="447.5" y="532" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#6b7280">-0.75</text>
+<line x1="555" y1="96" x2="555" y2="504" stroke="#e5e7eb"/>
+<text x="555" y="532" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#6b7280">-0.5</text>
+<line x1="662.5" y1="96" x2="662.5" y2="504" stroke="#e5e7eb"/>
+<text x="662.5" y="532" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#6b7280">-0.25</text>
+<line x1="770" y1="96" x2="770" y2="504" stroke="#e5e7eb"/>
+<text x="770" y="532" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#6b7280">0</text>
+<text x="300" y="134" font-family="Arial, sans-serif" font-size="16" font-weight="600" fill="#111827">Primary: compressed only</text>
+<rect x="446.102913592597" y="111" width="323.897086407403" height="16" rx="2" fill="#2563eb"/>
+<text x="438.102913592597" y="124" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#111827">-0.753</text>
+<rect x="549.256790462535" y="133" width="220.743209537465" height="16" rx="2" fill="#059669"/>
+<text x="541.256790462535" y="146" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#111827">-0.513</text>
+<rect x="770" y="155" width="0.072696937194678" height="16" rx="2" fill="#dc2626"/>
+<text x="762" y="168" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#111827">0.000</text>
+<text x="300" y="236" font-family="Arial, sans-serif" font-size="16" font-weight="600" fill="#111827">Primary: all compressed features</text>
+<rect x="350.61585594598" y="213" width="419.38414405402" height="16" rx="2" fill="#2563eb"/>
+<text x="342.61585594598" y="226" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#111827">-0.975</text>
+<rect x="457.735622441093" y="235" width="312.264377558907" height="16" rx="2" fill="#059669"/>
+<text x="449.735622441093" y="248" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#111827">-0.726</text>
+<rect x="770" y="257" width="0.0369443451317011" height="16" rx="2" fill="#dc2626"/>
+<text x="762" y="270" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#111827">0.000</text>
+<text x="300" y="338" font-family="Arial, sans-serif" font-size="16" font-weight="600" fill="#111827">No time adversary</text>
+<rect x="350.61585594598" y="315" width="419.38414405402" height="16" rx="2" fill="#2563eb"/>
+<text x="342.61585594598" y="328" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#111827">-0.975</text>
+<rect x="443.897417030785" y="337" width="326.102582969215" height="16" rx="2" fill="#059669"/>
+<text x="435.897417030785" y="350" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#111827">-0.758</text>
+<rect x="700.399237278036" y="359" width="69.600762721964" height="16" rx="2" fill="#dc2626"/>
+<text x="692.399237278036" y="372" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#111827">-0.162</text>
+<text x="300" y="440" font-family="Arial, sans-serif" font-size="16" font-weight="600" fill="#111827">No student loss</text>
+<rect x="350.61585594598" y="417" width="419.38414405402" height="16" rx="2" fill="#2563eb"/>
+<text x="342.61585594598" y="430" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#111827">-0.975</text>
+<rect x="457.741524404767" y="439" width="312.258475595233" height="16" rx="2" fill="#059669"/>
+<text x="449.741524404767" y="452" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#111827">-0.726</text>
+<rect x="770" y="461" width="0.0679299249195537" height="16" rx="2" fill="#dc2626"/>
+<text x="762" y="474" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#111827">0.000</text>
+<rect x="300" y="636" width="15" height="15" fill="#2563eb"/>
+<text x="323" y="649" font-family="Arial, sans-serif" font-size="14" fill="#111827">OOD attack recall</text>
+<rect x="555" y="636" width="15" height="15" fill="#059669"/>
+<text x="578" y="649" font-family="Arial, sans-serif" font-size="14" fill="#111827">OOD macro F1</text>
+<rect x="810" y="636" width="15" height="15" fill="#dc2626"/>
+<text x="833" y="649" font-family="Arial, sans-serif" font-size="14" fill="#111827">Benign specificity</text>
+</svg>
