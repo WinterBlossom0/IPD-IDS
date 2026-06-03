@@ -304,7 +304,7 @@ def refresh_feature_sets() -> dict[str, list[str]]:
         "compressed + losses": LATENT_COLUMNS + LOSS_COLUMNS,
         "compressed only": LATENT_COLUMNS,
         "losses only": LOSS_COLUMNS,
-        "full dataset": ALL_NUMERIC_COLUMNS,
+        "all compressed features": ALL_NUMERIC_COLUMNS,
     }
     FEATURE_SETS = {name: cols for name, cols in FEATURE_SETS.items() if cols}
     PRIMARY_FEATURE_SET = "compressed + losses"
@@ -1235,10 +1235,10 @@ primary_compressed_only_bundle = run_feature_set(
 
 # In[13]:
 
-primary_dataset_bundle = run_feature_set(
+primary_all_compressed_features_bundle = run_feature_set(
     variant_name="primary",
-    feature_set_name="full dataset",
-    experiment_name="primary__full_dataset",
+    feature_set_name="all compressed features",
+    experiment_name="primary__all_compressed_features",
 )
 
 
