@@ -95,8 +95,8 @@ shifted, leakage-purged test split, under each of the two detection heads.
 $^\\dagger$port column deleted instead of erased.}}
 \\label{{tab:grid}}
 \\centering
-\\small
-\\setlength{{\\tabcolsep}}{{4pt}}
+\\footnotesize
+\\setlength{{\\tabcolsep}}{{3.5pt}}
 \\begin{{tabular}}{{llrrrrr}}
 \\toprule
  & & & \\multicolumn{{2}}{{c}}{{MDL compr.}} & \\multicolumn{{2}}{{c}}{{test $F_1$}} \\\\

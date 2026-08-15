@@ -97,9 +97,9 @@ generalizable security indicators.'' Neither work measures the mechanism.
 
 Our starting observation is easy to reproduce: on
 CSE-CIC-IDS2018~\cite{sharafaldin2018toward}, a depth-8 decision tree restricted to the
-destination-port column reaches binary $F_1 = \SRRport$, against $\SRRall$ for all 46
-features. One field yields \SRRratio{} of the achievable score. Attacks were orchestrated
-against fixed ports, so port identity is very nearly the label, and any model on this
+destination-port column reaches binary $F_1 = \SRRport$ against $\SRRall$ for all 46
+features, so one field yields \SRRratio{} of the achievable score. Attacks were orchestrated
+against fixed ports, making port identity very nearly the label, so any model on this
 benchmark can obtain most of its headline score without learning behaviour.
 
 Wang \emph{et al.}~\cite{wang2026bias} recently diagnosed analogous shortcuts in encrypted
@@ -264,7 +264,7 @@ shows the asymmetry more clearly: port alone gives $0.597$ against $0.937$ for a
 Port identity therefore resolves \emph{whether} a flow is an attack far better than
 \emph{which} attack it is.
 
-\begin{figure*}[t]
+\begin{figure*}[!tb]
 \centering
 \includegraphics[width=\textwidth]{../vae_training/runs/figures/fig2_complementary.pdf}
 \caption{The two branches are complementary. The supervised head detects attack classes
@@ -281,38 +281,40 @@ $\lambda=1$ under the MLP probe, and at size~S from $3.30$ to $1.76$, close to t
 uninformative floor of $1.0$. Because these are fresh probes fitted post-hoc on frozen
 latents, this is evidence of removal rather than of a defeated adversary.
 
-\subsection{Negative result: shortcut reliance does not rise as capacity falls}
-We predicted smaller encoders would lean harder on the shortcut. The measurements
-contradict this: at $\lambda=0$, MDL compression is $7.16$ (L), $4.04$ (M), $3.30$ (S),
-$3.31$ (XS). Larger encoders retain \emph{more} port information, monotonically. One
-confound tempers it: latent width co-varies with capacity here ($d=32,8,4,4$), and a wider
-latent has more room to store any attribute.
-
 \subsection{Known and novel attacks need different branches}\label{sec:hybrid}
-Table~\ref{tab:hybrid} and Fig.~\ref{fig:complementary} report both branches. The
-supervised head reaches recall $0.675 \pm 0.035$ on attack classes present in training but
-only $0.041 \pm 0.067$ on the four classes appearing solely in test, where the large spread
-reflects that most seeds detect almost none. Its label set cannot represent an unseen class.
-The reconstruction-error branch inverts this: AUROC $0.989 \pm 0.004$ on those same novel
-classes and $0.366$, below chance, on seen ones, because seen attacks lie inside the
-distribution it was fitted to and therefore reconstruct well. Smaller encoders leave more
-novel-attack recall to the supervised branch (S: $0.265$), but no capacity approaches the
-anomaly branch on this axis.
+Table~\ref{tab:hybrid} and Fig.~\ref{fig:complementary} report both branches. The supervised
+head reaches recall $0.675 \pm 0.035$ on attack classes present in training but only
+$0.041 \pm 0.067$ on the four classes appearing solely in test, the large spread reflecting
+that most seeds detect almost none. Its label set cannot represent an unseen class. The
+reconstruction-error branch inverts this: AUROC $0.989 \pm 0.004$ on those same novel classes
+and $0.366$, below chance, on seen ones, because seen attacks lie inside the distribution it
+was fitted to and therefore reconstruct well. Smaller encoders leave more novel-attack recall
+to the supervised branch (S: $0.265$), but no capacity approaches the anomaly branch on this
+axis.
 
 At a threshold calibrated on benign training windows at $\alpha=0.01$, the anomaly branch
-recovers $97.6\%$ of novel-attack windows at the largest capacity. Two caveats belong with
-that figure. The realised benign false-positive rate on test is $6.8\%$ rather than the
-$1\%$ it was calibrated to, i.e.\ the score distribution shifts between partitions; and
-because that drift differs by capacity, recall at a fixed threshold is not comparable across
-sizes. The threshold-free comparison is: AUROC is $0.97$--$0.99$ at \emph{every} capacity
-including the \paramsXS-parameter encoder. Practically, this argues for recalibrating the
-threshold on deployment traffic rather than transporting it from training.
+recovers $97.6\%$ of novel-attack windows at the largest capacity, with two caveats. The
+realised benign false-positive rate on test is $6.8\%$ rather than the $1\%$ calibrated for,
+so the score distribution shifts between partitions; and because that drift differs by
+capacity, recall at a fixed threshold is not comparable across sizes. Threshold-free, AUROC
+is $0.97$--$0.99$ at \emph{every} capacity including the \paramsXS-parameter encoder. This
+argues for recalibrating on deployment traffic rather than transporting the threshold.
 
-\subsection{Negative result: erasure does not improve transfer}
-We further predicted shortcut-free representations would degrade less under temporal shift.
-They do not: the best shifted-split $F_1$ occurs at $\lambda=0$ (S: $0.617$; L: $0.612$) and
-increasing $\lambda$ reduces it (S at $\lambda=1$: $0.534$). Erasing a genuinely predictive
-cue costs detection performance and buys no transfer robustness here.
+\subsection{Two results that ran against expectation}
+We predicted smaller encoders would lean harder on the shortcut. They do not: at
+$\lambda=0$, MDL compression is $7.16$ (L), $4.04$ (M), $3.30$ (S), $3.31$ (XS), so larger
+encoders retain \emph{more} port information, monotonically. One confound tempers this:
+latent width co-varies with capacity here ($d=32,8,4,4$), and a wider latent has more room
+to store any attribute.
+
+We also predicted shortcut-free representations would degrade less under temporal shift.
+They do not: the best shifted-split $F_1$ occurs at $\lambda=0$ (S: $0.617$; L: $0.612$)
+and increasing $\lambda$ reduces it (S at $\lambda=1$: $0.534$). Erasing a genuinely
+predictive cue costs detection performance and buys no transfer robustness here. Repeating
+the $\lambda=0$ cells across five seeds gives standard deviations comparable to the
+differences between capacities, so we do not claim any capacity outperforms another on
+transfer; a single-seed reading of our own grid would have suggested size~S matches size~L
+at a $13\times$ parameter reduction, and the repeats show that is not supported.
 
 \begin{figure}[t]
 \centering
@@ -335,13 +337,6 @@ Reported intrusion-detection efficiency figures should therefore state the class
 footprint alongside the encoder's: in this regime the classifier is larger by two to three
 orders of magnitude.
 
-\subsection{Capacity ordering is not resolved by these runs}
-Repeating the $\lambda=0$ cells across five seeds gives standard deviations comparable to
-the differences between capacities, so we do \emph{not} claim that any capacity outperforms
-another on transfer. A single-seed reading of our own grid would have
-suggested that size~S matches size~L at a $13\times$ parameter reduction; the repeats show
-that conclusion is not supported. We report the interval rather than the point estimate.
-
 %==============================================================================
 \section{Discussion}
 The SRR result implies that a substantial fraction of published CSE-CIC-IDS2018 performance
@@ -351,9 +346,8 @@ SRR for the destination port alongside headline numbers.
 Our two negative results are worth stating plainly because both hypotheses are intuitive and
 both are, on this benchmark, wrong. Erasure is effective at removing the shortcut but does
 not purchase transfer robustness, and capacity does not drive shortcut reliance in the
-direction we expected. A plausible reading is that destination port, while spurious as a
-label proxy, is not the \emph{only} carrier of the train--test gap: removing it leaves other
-capture-specific regularities intact.
+direction we expected. Destination port, while spurious as a label proxy, is evidently not the only carrier of the
+train--test gap: removing it leaves other capture-specific regularities intact.
 
 \textbf{Evaluation-set reuse.} Checkpoints are selected by validation reconstruction and we
 also report validation $F_1$, so validation figures are optimistically biased; test figures
@@ -389,10 +383,13 @@ sets of~\cite{sarhan2021netflow} and UNSW-NB15~\cite{moustafa2015unsw} permit th
 retraining.
 
 \section*{Acknowledgment}
-The authors thank Prof.\ Deepali Patil for her guidance and mentorship throughout this
-work, and the Department of Artificial Intelligence and Data Science, SVKM's Dwarkadas J.
-Sanghvi College of Engineering, Mumbai, for the support and computational resources that
-made this study possible.
+The authors thank Prof.\ Deepali Patil for her guidance and mentorship, and the Department
+of Artificial Intelligence and Data Science, SVKM's Dwarkadas J. Sanghvi College of
+Engineering, Mumbai, for the support and computational resources that made this study
+possible. Code, the split and leakage-purging scripts, and the scripts that regenerate every
+table and figure from the experiment outputs are at
+\url{https://github.com/WinterBlossom0/IPD-IDS}; the dataset itself is redistributed by the
+Canadian Institute for Cybersecurity and is not included.
 
 \balance
 \bibliographystyle{IEEEtran}

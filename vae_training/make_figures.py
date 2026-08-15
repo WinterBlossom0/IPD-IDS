@@ -87,7 +87,7 @@ def fig_complementary():
     sizes = [s for s in ORDER if s in hg.index and s in og.index]
     x = np.arange(len(sizes)); w = 0.36
 
-    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.15))
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 1.8))
 
     ax = axes[0]
     ax.bar(x - w / 2, [hg.loc[s, "rs"] for s in sizes], w, color=SUP, zorder=3,
@@ -173,7 +173,7 @@ def fig_deployment():
     tot_m = enc + np.array([df.loc[s_, "mlp8_head_KB"] for s_ in sizes])
     tot_l = enc + np.array([df.loc[s_, "lgbm_head_KB"] for s_ in sizes])
 
-    fig, ax = plt.subplots(figsize=(3.4, 2.05))
+    fig, ax = plt.subplots(figsize=(3.4, 1.9))
     ax.bar(x - w, enc, w, color="#2a78d6", zorder=3, label="encoder only")
     ax.bar(x, tot_m, w, color="#1baf7a", zorder=3, label="+ MLP-8 head")
     ax.bar(x + w, tot_l, w, color=SUP, zorder=3, label="+ LightGBM head")
