@@ -1,0 +1,18 @@
+{
+  "tag": "S_dropport",
+  "lam": 0.0,
+  "drop_port": true,
+  "size_name": "S",
+  "hidden_dim": 16,
+  "latent_dim": 4,
+  "n_blocks": 1,
+  "encoder_params": 3024,
+  "best_epoch": 3,
+  "best_val_recon": 0.09901298846580964,
+  "final_val_disc_acc": 0.5335545877692957,
+  "d_eff": 1,
+  "relevant_axes": [
+    1
+  ],
+  "total_seconds": 259.7968966960907
+}

@@ -1,0 +1,198 @@
+{
+  "variant_configs": {
+    "primary": {
+      "suffix": "_primary",
+      "train": "df_train_primary.csv",
+      "final_ood": "df_test_primary.csv"
+    },
+    "no_time_adv": {
+      "suffix": "_no_time_adv",
+      "train": "df_train_no_time_adv.csv",
+      "final_ood": "df_test_no_time_adv.csv"
+    },
+    "no_student": {
+      "suffix": "_no_student",
+      "train": "df_train_no_student.csv",
+      "final_ood": "df_test_no_student.csv"
+    }
+  },
+  "experiments": [
+    "primary__compressed_plus_losses",
+    "primary__compressed_only",
+    "primary__primary_dataset",
+    "no_time_adv__compressed_plus_losses",
+    "no_student__compressed_plus_losses"
+  ],
+  "feature_sets_run": [
+    {
+      "experiment": "primary__compressed_plus_losses",
+      "variant": "primary",
+      "feature_set": "compressed + losses",
+      "train_file": "df_train_primary.csv",
+      "final_ood_file": "df_test_primary.csv",
+      "n_features": 8
+    },
+    {
+      "experiment": "primary__compressed_only",
+      "variant": "primary",
+      "feature_set": "compressed only",
+      "train_file": "df_train_primary.csv",
+      "final_ood_file": "df_test_primary.csv",
+      "n_features": 5
+    },
+    {
+      "experiment": "primary__primary_dataset",
+      "variant": "primary",
+      "feature_set": "full dataset",
+      "train_file": "df_train_primary.csv",
+      "final_ood_file": "df_test_primary.csv",
+      "n_features": 8
+    },
+    {
+      "experiment": "no_time_adv__compressed_plus_losses",
+      "variant": "no_time_adv",
+      "feature_set": "compressed + losses",
+      "train_file": "df_train_no_time_adv.csv",
+      "final_ood_file": "df_test_no_time_adv.csv",
+      "n_features": 8
+    },
+    {
+      "experiment": "no_student__compressed_plus_losses",
+      "variant": "no_student",
+      "feature_set": "compressed + losses",
+      "train_file": "df_train_no_student.csv",
+      "final_ood_file": "df_test_no_student.csv",
+      "n_features": 8
+    }
+  ],
+  "known_ood_constraint": "each final OOD CSV is loaded only inside run_final_ood_evaluation after that experiment trains and selects its threshold",
+  "score_name_by_experiment": {
+    "primary__compressed_plus_losses": "binary_head_domain_guarded",
+    "primary__compressed_only": "binary_head_domain_guarded",
+    "primary__primary_dataset": "binary_head_domain_guarded",
+    "no_time_adv__compressed_plus_losses": "binary_head_domain_guarded",
+    "no_student__compressed_plus_losses": "binary_head_domain_guarded"
+  },
+  "threshold_policy_by_experiment": {
+    "primary__compressed_plus_losses": {
+      "bal_acc": 0.9961225740692436,
+      "macro_f1": 0.996793806552887,
+      "benign_precision": 0.9982020854949951,
+      "attack_precision": 0.9967350959777832,
+      "benign_recall": 0.9991524873594392,
+      "attack_recall": 0.9930926607790482,
+      "benign_f1": 0.9986770749092102,
+      "attack_f1": 0.9949105381965637,
+      "benign_specificity": 0.9991524873594392,
+      "worst_domain_benign_recall": 0.7176470588235294,
+      "threshold": 0.6940156402975968,
+      "attack_rate": 0.2059314954051796,
+      "tn": 277047,
+      "fp": 235,
+      "fn": 499,
+      "tp": 71743,
+      "score_mean": 0.2290233075618744,
+      "score_p95": 0.7985742092132568,
+      "threshold_source": "in_dist_val_domain_guarded_relaxed",
+      "val_attack_recall_floor": 0.97,
+      "val_benign_spec_floor": 0.985,
+      "val_worst_domain_benign_floor": 0.96
+    },
+    "primary__compressed_only": {
+      "bal_acc": 0.9741791931280448,
+      "macro_f1": 0.9829713106155396,
+      "benign_precision": 0.9868430495262146,
+      "attack_precision": 0.9980053305625916,
+      "benign_recall": 0.9995059181627368,
+      "attack_recall": 0.9488524680933529,
+      "benign_f1": 0.9931341409683228,
+      "attack_f1": 0.9728084206581116,
+      "benign_specificity": 0.9995059181627368,
+      "worst_domain_benign_recall": 0.6176470588235294,
+      "threshold": 0.976144578313253,
+      "attack_rate": 0.19650724985980933,
+      "tn": 277145,
+      "fp": 137,
+      "fn": 3695,
+      "tp": 68547,
+      "score_mean": 0.21517279744148254,
+      "score_p95": 0.9975107908248901,
+      "threshold_source": "in_dist_val_domain_guarded_relaxed",
+      "val_attack_recall_floor": 0.97,
+      "val_benign_spec_floor": 0.985,
+      "val_worst_domain_benign_floor": 0.96
+    },
+    "primary__primary_dataset": {
+      "bal_acc": 0.9979048711064621,
+      "macro_f1": 0.9980016946792603,
+      "benign_precision": 0.9991057515144348,
+      "attack_precision": 0.9970915913581848,
+      "benign_recall": 0.9992426482786477,
+      "attack_recall": 0.9965670939342764,
+      "benign_f1": 0.999174177646637,
+      "attack_f1": 0.9968292713165283,
+      "benign_specificity": 0.9992426482786477,
+      "worst_domain_benign_recall": 0.7352941176470589,
+      "threshold": 0.6908433734939758,
+      "attack_rate": 0.20657808905826208,
+      "tn": 277072,
+      "fp": 210,
+      "fn": 248,
+      "tp": 71994,
+      "score_mean": 0.22897972166538239,
+      "score_p95": 0.798660159111023,
+      "threshold_source": "in_dist_val_domain_guarded_relaxed",
+      "val_attack_recall_floor": 0.97,
+      "val_benign_spec_floor": 0.985,
+      "val_worst_domain_benign_floor": 0.96
+    },
+    "no_time_adv__compressed_plus_losses": {
+      "bal_acc": 0.9966722112672461,
+      "macro_f1": 0.9973441958427429,
+      "benign_precision": 0.9984290599822998,
+      "attack_precision": 0.9976103901863098,
+      "benign_recall": 0.9993796928758448,
+      "attack_recall": 0.9939647296586474,
+      "benign_f1": 0.9989041686058044,
+      "attack_f1": 0.9957842230796814,
+      "benign_specificity": 0.9993796928758448,
+      "worst_domain_benign_recall": 0.9823529411764705,
+      "threshold": 0.72354672417985,
+      "attack_rate": 0.2059314954051796,
+      "tn": 277110,
+      "fp": 172,
+      "fn": 436,
+      "tp": 71806,
+      "score_mean": 0.20064973831176758,
+      "score_p95": 0.7849209904670715,
+      "threshold_source": "in_dist_val_domain_guarded",
+      "val_attack_recall_floor": 0.97,
+      "val_benign_spec_floor": 0.985,
+      "val_worst_domain_benign_floor": 0.96
+    },
+    "no_student__compressed_plus_losses": {
+      "bal_acc": 0.9991865095340033,
+      "macro_f1": 0.9987882375717163,
+      "benign_precision": 0.9997798800468445,
+      "attack_precision": 0.9970026612281799,
+      "benign_recall": 0.9992174032212693,
+      "attack_recall": 0.9991556158467374,
+      "benign_f1": 0.9994985461235046,
+      "attack_f1": 0.9980779886245728,
+      "benign_specificity": 0.9992174032212693,
+      "worst_domain_benign_recall": 0.2235294117647059,
+      "threshold": 0.6831325301204819,
+      "attack_rate": 0.20713312962772226,
+      "tn": 277065,
+      "fp": 217,
+      "fn": 61,
+      "tp": 72181,
+      "score_mean": 0.20228256285190582,
+      "score_p95": 0.7316374182701111,
+      "threshold_source": "in_dist_val_domain_guarded_relaxed",
+      "val_attack_recall_floor": 0.97,
+      "val_benign_spec_floor": 0.985,
+      "val_worst_domain_benign_floor": 0.96
+    }
+  }
+}

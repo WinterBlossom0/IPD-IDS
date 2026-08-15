@@ -1,0 +1,21 @@
+{
+  "tag": "L_lam0_s43",
+  "lam": 0.0,
+  "drop_port": false,
+  "size_name": "L",
+  "hidden_dim": 48,
+  "latent_dim": 32,
+  "n_blocks": 2,
+  "encoder_params": 40576,
+  "seed": 43,
+  "best_epoch": 3,
+  "best_val_recon": 0.027460264825714446,
+  "final_val_disc_acc": 0.7297801926044781,
+  "d_eff": 3,
+  "relevant_axes": [
+    13,
+    21,
+    25
+  ],
+  "total_seconds": 496.5843884944916
+}

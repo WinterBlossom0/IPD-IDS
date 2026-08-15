@@ -1,0 +1,19 @@
+{
+  "tag": "S_lam0",
+  "lam": 0.0,
+  "drop_port": false,
+  "size_name": "S",
+  "hidden_dim": 16,
+  "latent_dim": 4,
+  "n_blocks": 1,
+  "encoder_params": 3040,
+  "best_epoch": 3,
+  "best_val_recon": 0.08787942043765891,
+  "final_val_disc_acc": 0.5664626831583971,
+  "d_eff": 2,
+  "relevant_axes": [
+    2,
+    3
+  ],
+  "total_seconds": 311.2036130428314
+}

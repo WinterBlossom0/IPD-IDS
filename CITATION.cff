@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+title: >-
+  Shortcut Reliance and Capacity in Parameter-Efficient
+  Network Intrusion Detection
+message: If you use this software or its findings, please cite the manuscript in paper/.
+type: software
+authors:
+  - given-names: Vihaan
+    family-names: Ovalekar
+  - given-names: Ojas
+    family-names: Gore
+  - given-names: Yash
+    family-names: Pradhan
+  - given-names: Ishan
+    family-names: Tanawade
+abstract: >-
+  Code and manuscript for a study of shortcut reliance in flow-based network intrusion
+  detection. Introduces the Shortcut Reliance Ratio, an adversarial latent-level erasure
+  method for the destination-port shortcut with removal verified by minimum description
+  length, and a capacity sweep from 40,576 to 1,060 encoder parameters with deployment cost
+  measured on a single CPU core.
+keywords:
+  - network intrusion detection
+  - shortcut learning
+  - variational autoencoder
+  - concept erasure
+  - edge computing
+  - TinyML
+license: MIT

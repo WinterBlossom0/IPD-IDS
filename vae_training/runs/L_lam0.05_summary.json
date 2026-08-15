@@ -1,0 +1,13 @@
+{
+  "tag": "lam0.05",
+  "lam": 0.05,
+  "drop_port": false,
+  "best_epoch": 3,
+  "best_val_recon": 0.03346497888128848,
+  "final_val_disc_acc": 0.4282346790717561,
+  "d_eff": 1,
+  "relevant_axes": [
+    25
+  ],
+  "total_seconds": 814.8508598804474
+}

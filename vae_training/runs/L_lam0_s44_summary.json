@@ -1,0 +1,20 @@
+{
+  "tag": "L_lam0_s44",
+  "lam": 0.0,
+  "drop_port": false,
+  "size_name": "L",
+  "hidden_dim": 48,
+  "latent_dim": 32,
+  "n_blocks": 2,
+  "encoder_params": 40576,
+  "seed": 44,
+  "best_epoch": 3,
+  "best_val_recon": 0.025675938951187922,
+  "final_val_disc_acc": 0.6472415547705491,
+  "d_eff": 2,
+  "relevant_axes": [
+    31,
+    5
+  ],
+  "total_seconds": 580.9878368377686
+}

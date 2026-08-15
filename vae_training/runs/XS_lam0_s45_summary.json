@@ -1,0 +1,19 @@
+{
+  "tag": "XS_lam0_s45",
+  "lam": 0.0,
+  "drop_port": false,
+  "size_name": "XS",
+  "hidden_dim": 8,
+  "latent_dim": 4,
+  "n_blocks": 1,
+  "encoder_params": 1060,
+  "seed": 45,
+  "best_epoch": 3,
+  "best_val_recon": 0.10260498502142885,
+  "final_val_disc_acc": 0.5572087400137199,
+  "d_eff": 1,
+  "relevant_axes": [
+    2
+  ],
+  "total_seconds": 1311.3698647022247
+}

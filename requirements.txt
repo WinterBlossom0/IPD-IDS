@@ -1,0 +1,22 @@
+# Environments used (see ~/ml-envs/README.md for the launchers on this machine).
+#
+#   torch-python  -> training, latent extraction, efficiency benchmark
+#   ds-python     -> probes, detection heads, figures, LaTeX table generation
+#
+# GPU work was done on an RTX 5080 (16 GB) under WSL2 with CUDA 13.0.
+
+# --- torch environment (Python 3.14) ---
+torch==2.13.0            # +cu130
+numpy>=2.0
+pandas>=3.0
+
+# --- data-science environment (Python 3.14) ---
+scikit-learn>=1.9
+lightgbm>=4.7
+matplotlib>=3.11
+scipy>=1.18
+pypdf>=6.0               # paper/check_pdf.py only
+
+# --- LaTeX ---
+# tectonic 0.15.0, self-contained; no system TeX install required:
+#   curl -sL https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-x86_64-unknown-linux-musl.tar.gz | tar xz -C ~/.local/bin

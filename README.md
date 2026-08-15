@@ -1,82 +1,132 @@
-# VAE & Neural Network Open-World IDS (IPD-IDS)
+# Shortcut Reliance and Capacity in Parameter-Efficient Network Intrusion Detection
 
-An AI-powered Network Intrusion Detection System (IDS) that uses a hybrid deep learning architecture—combining a **ConvAttention+LSTM Variational Autoencoder (VAE)** and a **Domain-Guarded Neural Tabular Classifier**—to detect known attacks and discover novel, unseen (Out-of-Distribution) threats in real-time network traffic.
+Research code and manuscript for a study of **how much of flow-based intrusion-detection
+accuracy is real detection**, and what it costs to remove the part that is not.
 
----
-
-## 🔍 Methodology & CatBoost Clarification
-
-Although early architecture concepts or draft reports refer to this system as a **VAE-CatBoost** hybrid, the final implementation is a **fully neural deep learning pipeline** to eliminate runtime dependencies, optimize prediction latency, and enable end-to-end domain generalization:
-- **CatBoost (Pre-Training Feature Selection Only)**: CatBoost is utilized strictly during the offline training setup (see [cic-ids-vae.ipynb](file:///c:/Users/vihaa/OneDrive/Documents/IPD-IDS/cic-ids-vae.ipynb)) to run hyperparameter optimization (Optuna) and compute **SHAP (SHAPley Additive exPlanations)** values. This determines the top 22 most predictive features to extract from raw network flows.
-- **ConvAttention+LSTM VAE (Neural)**: Compresses the sequence of 22 input features into a 5-dimensional latent space and computes reconstruction losses (Student-t, KLD, and MSE) to score anomaly deviations from benign baseline traffic.
-- **BinaryFirstTabularNet (Neural)**: A custom tabular neural network that uses the VAE's latent space and losses as input features to perform binary attack prediction and multiclass subtype classification.
-- **Sniffer Engine (Purely Neural)**: The real-time network sniffer (`realtime_capture.py`) runs this inference pipeline entirely on PyTorch with no runtime dependency on CatBoost.
+**Authors** — Vihaan Ovalekar, Ojas Gore, Yash Pradhan, Ishan Tanawade
+**Mentor** — Prof. Deepali Patil
+Department of Artificial Intelligence and Data Science,
+SVKM's Dwarkadas J. Sanghvi College of Engineering, Mumbai, India
 
 ---
 
-## 🛠 System Architecture
+## Summary
 
-The detection pipeline consists of two primary neural components:
+On CSE-CIC-IDS2018, a depth-8 decision tree given **only the destination port** attains
+binary `F1 = 0.9257`, which is **96.7%** of the `F1 = 0.9572` obtained from all 46 features.
+Attacks in that capture were orchestrated against fixed ports, so port identity is very
+nearly the label. We formalise this as the **Shortcut Reliance Ratio (SRR)**, then train a
+causal column-wise VAE across capacities from 40,576 down to 1,060 encoder parameters,
+crossed with an adversarial objective that erases port information from the latent.
 
-```mermaid
-graph TD
-    RawFlow[Real-Time Packet Stream] --> FlowTracker[Flow Tracker: 22 Features]
-    FlowTracker --> WindowBuffer[30-Step Sliding Window]
-    WindowBuffer --> VAE[ConvAttention+LSTM VAE]
-    VAE --> Latent[5D Latent Space]
-    VAE --> Losses[VAE Losses: Student-t, KLD, MSE]
-    Latent & Losses --> Classifier[BinaryFirstTabularNet Classifier]
-    Classifier --> BinaryProb[Binary Attack Probability]
-    Classifier --> SubtypeLogits[Subtype Multiclass Logits]
-    Losses --> ReconScorer[Reconstruction OOD Scorer]
-    ReconScorer --> ReconScore[Reconstruction Anomaly Score]
-    BinaryProb & ReconScore --> Fusion[OOD Score Fusion]
-    Fusion --> Decision{Attack Detected?}
-    Decision -- Yes --> Alert[⚠️ Attack Subtype Alert]
-    Decision -- No --> Log[✓ Benign Log]
+Erasure is verified by **prequential minimum description length** on frozen latents, not by
+adversary loss — on this data the adversary is degenerate, pinning at exactly `0.443`, the
+majority-class rate of the port-bucket distribution.
+
+### Headline results
+
+| Result | Status |
+|---|---|
+| SRR = **0.9672** — the benchmark is nearly answerable from one field | measured |
+| Erasure works: residual port information falls **7.16 → 2.38** (MDL, size L) | measured |
+| Zero-day AUROC **0.97–0.99** at every capacity, incl. 1,060 params | measured, 5 seeds |
+| Supervised and anomaly branches are complementary (0.675/0.041 vs 0.366/0.989) | measured |
+| Smaller models lean harder on the shortcut | **refuted** — larger retain more |
+| Erasure improves cross-environment transfer | **refuted** — best transfer at λ=0 |
+| A 3,024-param encoder matches a 40,576-param one on transfer | **inside noise** |
+
+The last row is *not* statistically supported: between-size range at λ=0 is 0.144 while
+within-size spread across λ reaches 0.199. Do not cite it without error bars. The deployed
+system is encoder **+ classifier**: a LightGBM head adds ~1,379 KB regardless of encoder
+size, so only the 49-parameter MLP-8 configuration is microcontroller-deployable.
+
+---
+
+## Repository layout
+
+```
+paper/              LaTeX manuscript (IEEE conference, 6-page limit)
+  main.tex            paper source; results tables are \input, never hand-edited
+  refs.bib            32 references, every one resolved against DBLP or the arXiv API
+  verify_refs.py      rebuilds refs.bib from authoritative records only
+  make_tables.py      generates tables + prose macros from the experiment CSVs
+  check_pdf.py        post-build gate: page limit, sections, unresolved citations
+  build.sh            regenerate tables, then compile with tectonic
+
+vae_training/       experiment code
+  train_vae.py          the causal column-wise VAE (ColumnVAE) and ARD machinery
+  prep_shortcut.py      port recovery, port bucketing, duplicate/leakage masks
+  train_invariant.py    capacity x erasure training; one run per grid cell
+  extract_latents.py    freeze each model, dump latents (all evaluation runs on these)
+  evaluate_frontier.py  SRR, MDL probes, LEACE, LightGBM detection heads
+  bench_efficiency.py   params, FLOPs, int8 size, single-core CPU latency
+  make_figures.py       publication figures
+  score_ood.py          unsupervised zero-day scoring from reconstruction error
+  evaluate_hybrid.py    binary + multiclass supervised branch, seen vs unseen split
+  run_grid.sh           capacity x erasure grid
+  run_seeds.sh          seed repeats (serial)
+  run_seeds_parallel.sh seed repeats, 4-way concurrent (~1.8 GB VRAM each)
+  run_eval_pipeline.sh  latents -> efficiency -> frontier -> tables -> figures
+
+data/               inputs and derived arrays (git-ignored; see data/README.md)
+archive/            small metadata preserved from the superseded first-generation pipeline
+sources.md          dataset provenance and citation requirements
 ```
 
-1. **ConvAttention+LSTM VAE**:
-   - Compresses 22 input features across a 30-step sliding window of sequential flows into a 5-dimensional latent representation.
-   - Computes reconstruction errors (`student_loss`, `kld_loss`, `mse_loss`) to score deviations from benign baseline traffic.
-2. **BinaryFirstTabularNet Classifier**:
-   - Takes the 5 latent dimensions and 3 VAE loss components as input.
-   - Outputs binary attack probabilities and multiclass subtype predictions (`DoS`, `DDoS`, `Brute-Force`, `Web Attack`).
-3. **OOD Score Fusion**:
-   - Fuses VAE reconstruction OOD score with classifier confidence:
-     $$\text{attack\_score} = 0.65 \times \text{binary\_prob} + 0.35 \times \text{recon\_score}$$
-   - If `attack_score >= 0.694`, an alert is fired with the classified subtype.
-
 ---
 
-## 📂 Project Structure
+## Reproducing
 
-- `realtime_capture.py` - The real-time packet capture, flow extraction, and classification engine.
-- `run_capture_admin.bat` - Batch file to easily launch the capture engine with administrative privileges.
-- `cic_neural.ipynb` / `cic_neural.py` - Classifier training, domain adaptation (GRL), and threshold calibration notebook/script.
-- `cic-ids-vae.ipynb` / `cic_ids_vae_benchmark.py` - VAE model definition, training, and latency benchmarking.
-- `recalibrate_thresholds.py` - Script to calibrate baseline reconstruction percentiles.
-- `vae_primary_model.pth` - Trained VAE weights.
-- `nn_classifier_model.pth` - Trained neural classifier weights.
-- `nn_scaler.joblib` - Scaler for tabular classifier input features.
-- `column_min_max_mapping.csv` - Min-max bounds for VAE input features.
-- `anomaly_thresholds.joblib` - Reconstruction scorer percentiles and calibrated decision thresholds.
+Requires an NVIDIA GPU (developed on an RTX 5080, 16 GB) and Python 3.14 environments as
+described in `requirements.txt`.
 
----
-
-## 🚀 Running the System
-
-### Prerequisites
-Install Python dependencies:
 ```bash
-pip install torch numpy pandas scikit-learn joblib scapy
+# 0. obtain CSE-CIC-IDS2018 and build the splits   (see data/README.md)
+jupyter nbconvert --execute cicids2018-analysis.ipynb
+
+# 1. port recovery, bucketing, leakage masks       (CPU, ~5 min)
+ds-python vae_training/prep_shortcut.py
+
+# 2. capacity x erasure grid                       (GPU, ~1h45m)
+bash vae_training/run_grid.sh
+
+# 3. latents, efficiency, MDL/LEACE/detection, figures   (~45 min)
+bash vae_training/run_eval_pipeline.sh
+
+# 4. zero-day branch + supervised branch
+torch-python vae_training/score_ood.py
+ds-python   vae_training/evaluate_hybrid.py
+
+# 5. build and verify the paper
+./paper/build.sh
+python3 paper/check_pdf.py 6      # page limit, sections, citations, overflow
+ds-python paper/audit_claims.py   # numbers vs data, abstract/body consistency
 ```
 
-### Real-Time Intrusion Detection
-To run the sniffer and classify live network traffic:
+### Methodological commitments
 
-1. **Option 1 (Recommended)**: Right-click `run_capture_admin.bat` and select **Run as Administrator** (required for raw packet socket access on Windows).
-2. **Option 2 (CLI)**: Run the python script in an elevated shell:
-   ```bash
-   python realtime_capture.py --device cpu --duration 3600
-   ```
+These are deliberate and load-bearing; changing them changes what the results mean.
+
+- **Chronological splits.** Each capture file is split 25/25/50 *before* cross-file
+  concatenation, nothing is shuffled, and the scaler is fitted on the fit partition only.
+- **Leakage purged.** 22.2% of fit rows and 27.8% of test rows are exact duplicates, and
+  90,022 unique test vectors (5.76%) also occur in fit. Detection metrics are reported on
+  the purged split. Duplicates are masked at evaluation, not deleted, because the sequence
+  model needs contiguous windows.
+- **Deployment cost counts the classifier too.** The decoder is training-only and never
+  ships, so parameter counts are the encoder's — but the *system* is encoder + classifier,
+  and a LightGBM head adds ~1,379 KB irrespective of encoder size. Only the 49-parameter
+  MLP-8 configuration fits a microcontroller budget; both are reported.
+- **Two branches, one encoder.** A supervised head covers attack classes seen in training
+  (binary and multiclass); reconstruction error covers classes absent from it. Neither alone
+  is a detector — the anomaly branch scores *below chance* on seen attacks, and the
+  supervised head near-zero on unseen ones.
+- **Erasure is verified, not asserted.** Probing classifiers are unreliable evidence of
+  concept removal, so we report MDL codelength across two probe families.
+
+---
+
+## Citation
+
+See `CITATION.cff`. Dataset provenance and the citations required by the Canadian Institute
+for Cybersecurity's redistribution terms are recorded in `sources.md`.

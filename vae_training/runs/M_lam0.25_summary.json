@@ -1,0 +1,18 @@
+{
+  "tag": "M_lam0.25",
+  "lam": 0.25,
+  "drop_port": false,
+  "size_name": "M",
+  "hidden_dim": 32,
+  "latent_dim": 8,
+  "n_blocks": 2,
+  "encoder_params": 18064,
+  "best_epoch": 8,
+  "best_val_recon": 0.06561660964481036,
+  "final_val_disc_acc": 0.4529670965741624,
+  "d_eff": 1,
+  "relevant_axes": [
+    2
+  ],
+  "total_seconds": 500.52620029449463
+}
