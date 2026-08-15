@@ -48,32 +48,39 @@ Network Intrusion Detection}
 \textit{SVKM's Dwarkadas J. Sanghvi College of Engineering}\\
 Mumbai, India\\
 \{vihaan.ovalekar, ojas.gore, yash.pradhan, ishan.tanawade\}@djsce.edu.in}%
+\thanks{Code, the split and leakage-purging scripts, and the scripts that regenerate every
+table and figure from the experiment outputs are available at
+\url{https://github.com/WinterBlossom0/IPD-IDS}. The dataset is redistributed by the
+Canadian Institute for Cybersecurity and is not included.}%
 }
 
 \maketitle
 
 \begin{abstract}
-Lightweight network intrusion detection systems report near-perfect accuracy on
-public benchmarks yet degrade sharply on traffic from a different network. We show that a
-large part of that reported accuracy is not detection. On CSE-CIC-IDS2018, a depth-8
-decision tree given only the destination port attains binary $F_1 = \SRRport$, which is
-\SRRratio{} of the $F_1 = \SRRall$ obtained from all 46 features, because the capture
-orchestrated attacks against fixed ports. We formalise this as the Shortcut Reliance Ratio
-(SRR), a one-number diagnostic any intrusion-detection paper can report. We then study a
-causal, column-wise variational autoencoder across capacities from \paramsL{} down to
-\paramsXS{} encoder parameters. A single forward pass supports two branches: a supervised
-head for attack classes present in training, and the reconstruction error as a label-free
-anomaly score for classes absent from it. The branches prove strongly complementary. The head
-reaches recall $0.675$ on seen attack classes and $0.041$ on unseen ones, while the anomaly
-score reaches AUROC $0.989$ on unseen classes and $0.366$ on seen ones, so neither alone is
-a detector and together they cover both regimes, at an encoder as small as
-\paramsXS{} parameters. We additionally erase the port shortcut adversarially, verifying
-removal by minimum description length rather than adversary loss, and report two results
-that ran against expectation: larger encoders retain \emph{more} port information, and
-erasure does not improve cross-environment transfer. Finally we show that efficiency claims
-in this literature are systematically mis-stated: the classifier shipping with the encoder
-is up to $300\times$ larger than the encoder itself, and only a 49-parameter head keeps the
-complete system inside an ESP32-class budget.
+\textit{Problem} --- Lightweight network intrusion detection systems report near-perfect
+accuracy on public benchmarks yet degrade sharply on traffic from a different network, and
+it is unclear how much of the reported accuracy is detection at all.
+\textit{Method} --- We first quantify shortcut reliance with the Shortcut Reliance Ratio
+(SRR), the ratio of detection $F_1$ from a single suspect field to $F_1$ from the full
+feature set under a fixed weak learner. We then study a causal, column-wise variational
+autoencoder across capacities from \paramsL{} down to \paramsXS{} encoder parameters. One
+forward pass supports two branches: a supervised head for attack classes present in
+training, evaluated as binary and multiclass detection, and the reconstruction error as a
+label-free anomaly score for classes absent from it. We additionally erase the identified
+shortcut adversarially, verifying removal by minimum description length on frozen
+representations rather than by adversary loss.
+\textit{Results} --- On CSE-CIC-IDS2018 a depth-8 decision tree given only the destination
+port attains $F_1 = \SRRport$, which is \SRRratio{} of the $F_1 = \SRRall$ from all 46
+features, because the capture orchestrated attacks against fixed ports. The two branches
+prove strongly complementary: the head reaches recall $0.675$ on seen attack classes and
+$0.041$ on unseen ones, while the anomaly score reaches AUROC $0.989$ on unseen classes and
+$0.366$ on seen ones. Erasure removes port information ($7.16 \rightarrow 2.38$) but two
+expectations failed: larger encoders retain \emph{more} port information, and erasure does
+not improve cross-environment transfer.
+\textit{Conclusion} --- Neither branch alone is a detector; together they cover both regimes
+at an encoder of \paramsXS{} parameters. Efficiency claims in this literature are also
+systematically mis-stated, since the classifier shipping with the encoder can be $300\times$
+larger than the encoder itself.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -274,13 +281,6 @@ the distribution it was fitted to. Error bars are one standard deviation over se
 \label{fig:complementary}
 \end{figure*}
 
-\subsection{Erasure works, and is verified}
-MDL compression falls monotonically with $\lambda$ at every capacity
-(Table~\ref{tab:grid}). At the largest size it drops from $7.16$ at $\lambda=0$ to $2.38$ at
-$\lambda=1$ under the MLP probe, and at size~S from $3.30$ to $1.76$, close to the
-uninformative floor of $1.0$. Because these are fresh probes fitted post-hoc on frozen
-latents, this is evidence of removal rather than of a defeated adversary.
-
 \subsection{Known and novel attacks need different branches}\label{sec:hybrid}
 Table~\ref{tab:hybrid} and Fig.~\ref{fig:complementary} report both branches. The supervised
 head reaches recall $0.675 \pm 0.035$ on attack classes present in training but only
@@ -300,6 +300,13 @@ capacity, recall at a fixed threshold is not comparable across sizes. Threshold-
 is $0.97$--$0.99$ at \emph{every} capacity including the \paramsXS-parameter encoder. This
 argues for recalibrating on deployment traffic rather than transporting the threshold.
 
+\subsection{Erasure works, and is verified}
+MDL compression falls monotonically with $\lambda$ at every capacity
+(Table~\ref{tab:grid}). At the largest size it drops from $7.16$ at $\lambda=0$ to $2.38$ at
+$\lambda=1$ under the MLP probe, and at size~S from $3.30$ to $1.76$, close to the
+uninformative floor of $1.0$. Because these are fresh probes fitted post-hoc on frozen
+latents, this is evidence of removal rather than of a defeated adversary.
+
 \subsection{Two results that ran against expectation}
 We predicted smaller encoders would lean harder on the shortcut. They do not: at
 $\lambda=0$, MDL compression is $7.16$ (L), $4.04$ (M), $3.30$ (S), $3.31$ (XS), so larger
@@ -308,8 +315,8 @@ latent width co-varies with capacity here ($d=32,8,4,4$), and a wider latent has
 to store any attribute.
 
 We also predicted shortcut-free representations would degrade less under temporal shift.
-They do not: the best shifted-split $F_1$ occurs at $\lambda=0$ (S: $0.617$; L: $0.612$)
-and increasing $\lambda$ reduces it (S at $\lambda=1$: $0.534$). Erasing a genuinely
+They do not: the best shifted-split $F_1$ occurs at $\lambda=0$ (S: $0.622$; L: $0.610$)
+and increasing $\lambda$ reduces it (S at $\lambda=1$: $0.539$). Erasing a genuinely
 predictive cue costs detection performance and buys no transfer robustness here. Repeating
 the $\lambda=0$ cells across five seeds gives standard deviations comparable to the
 differences between capacities, so we do not claim any capacity outperforms another on
@@ -383,13 +390,9 @@ sets of~\cite{sarhan2021netflow} and UNSW-NB15~\cite{moustafa2015unsw} permit th
 retraining.
 
 \section*{Acknowledgment}
-The authors thank Prof.\ Deepali Patil for her guidance and mentorship, and the Department
-of Artificial Intelligence and Data Science, SVKM's Dwarkadas J. Sanghvi College of
-Engineering, Mumbai, for the support and computational resources that made this study
-possible. Code, the split and leakage-purging scripts, and the scripts that regenerate every
-table and figure from the experiment outputs are at
-\url{https://github.com/WinterBlossom0/IPD-IDS}; the dataset itself is redistributed by the
-Canadian Institute for Cybersecurity and is not included.
+The authors thank Prof.\ Deepali Patil for her guidance and mentorship throughout this
+work, and the Department of Artificial Intelligence and Data Science, SVKM's Dwarkadas J.
+Sanghvi College of Engineering, Mumbai.
 
 \balance
 \bibliographystyle{IEEEtran}
