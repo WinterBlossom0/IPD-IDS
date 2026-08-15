@@ -27,9 +27,9 @@ print(f"pages: {len(pdf.pages)}\n")
 
 # ---- 1. float citation order
 caps = [(m.start(), "Fig", m.group(1)) for m in re.finditer(r"Fig\.\s*(\d+)\.\s+[A-Z]", T)]
-tcaps = [(m.start(), "Table", m.group(1)) for m in re.finditer(r"TABLE\s+([IVX]+)", T)]
+tcaps = [(m.start(), "Table", m.group(1)) for m in re.finditer(r"Table\s+(\d+)\s*[:.]?\s*[A-Z]", T)]
 refs = [(m.start(), "Fig", m.group(1)) for m in re.finditer(r"Fig\.\s*(\d+)(?![\.\d])", T)]
-trefs = [(m.start(), "Table", m.group(1)) for m in re.finditer(r"Table\s+([IVX]+)(?!\w)", T)]
+trefs = [(m.start(), "Table", m.group(1)) for m in re.finditer(r"Table\s+(\d+)(?!\w)", T)]
 seen, order = set(), []
 for pos, typ, num in sorted(caps + tcaps + refs + trefs):
     if (typ, num) not in seen and (pos, typ, num) in refs + trefs:
@@ -40,7 +40,7 @@ tabs = [o for o in order if o.startswith("Table")]
 print("float first-citation order:", " -> ".join(order))
 if figs != sorted(figs, key=lambda x: int(x.split()[1])):
     fails.append(f"figures cited out of order: {figs}")
-roman = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5}
+roman = {str(i): i for i in range(1, 9)}
 if tabs != sorted(tabs, key=lambda x: roman.get(x.split()[1], 99)):
     fails.append(f"tables cited out of order: {tabs}")
 
@@ -49,7 +49,7 @@ if tabs != sorted(tabs, key=lambda x: roman.get(x.split()[1], 99)):
 # structure label, and matching that gives a false ordering failure.
 want = ["INTRODUCTION", "LITERATURE REVIEW", "NOVELTY", "DATASET", "METHODOLOGY",
         "RESULTS", "DISCUSSION", "CONCLUSION"]
-roman_pre = r"(?:I{1,3}|IV|V|VI{1,3}|IX|X)\."
+roman_pre = r"(?:\d{1,2}|I{1,3}|IV|V|VI{1,3}|IX|X)\."
 pos = []
 for w in want:
     m = re.search(roman_pre + r"\s*" + w.title().replace(" ", r"\s+"), T, re.I)

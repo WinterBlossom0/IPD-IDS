@@ -1,28 +1,15 @@
 %==============================================================================
-% Procedia Computer Science (Elsevier) submission.
+% Shortcut reliance in parameter-efficient flow-based intrusion detection.
 %
-% Build:  ./build.sh          (regenerates tables from CSVs, then compiles)
-%
-% NOTE ON THE TEMPLATE: Procedia is a Camera-Ready Copy journal. Elsevier's ecrc.sty
-% (journal logo, volume/firstpage, copyright line) is supplied by the organisers and is
-% applied at the camera-ready stage, not at submission. This file therefore targets the
-% elsarticle base class that ecrc extends, so adding ecrc later is a preamble change only.
-% To switch: uncomment the \usepackage{ecrc} block below once you have the files.
+% Build:  ./build.sh            (uses tectonic; regenerates tables from CSVs first)
+% Layout: IEEE conference, two-column. HARD LIMIT 6 PAGES.
 %
 % Numbers in the prose come from numbers_generated.tex and tables from
 % tables_generated.tex, both written by make_tables.py out of the experiment CSVs.
+% Do not hand-edit those two files.
 %==============================================================================
-\documentclass[5p,times]{elsarticle}
-
-% --- camera-ready only; uncomment when the organisers supply ecrc.sty and the logo ---
-% \usepackage{ecrc}
-% \volume{00}
-% \firstpage{1}
-% \journalname{Procedia Computer Science}
-% \runauth{V. Ovalekar et al.}
-% \jid{procs}
-% \jnltitlelogo{Procedia Computer Science}
-% \CopyrightLine{2026}{Published by Elsevier B.V.}
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
 
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
@@ -30,12 +17,7 @@
 \usepackage{url}
 \usepackage{xcolor}
 \usepackage[hidelinks]{hyperref}
-% elsarticle's columns are narrower than IEEEtran's; microtype plus a little emergency
-% stretch removes the overfull lines that long \cite-bearing tokens would otherwise cause.
-\usepackage{microtype}
-\emergencystretch=1.2em
-
-\biboptions{numbers,sort&compress}
+\usepackage{balance}
 
 % Visible marker for anything not yet measured. Renders red; strip before submission.
 \newcommand{\pending}[1]{\textcolor{red}{[\,#1\,]}}
@@ -55,18 +37,24 @@
 
 \begin{document}
 
-\begin{frontmatter}
+\title{A Practical Hybrid VAE Framework for\\
+Parameter-Efficient Multiclass and Zero-Day\\
+Network Intrusion Detection}
 
-\title{A Practical Hybrid VAE Framework for Parameter-Efficient Multiclass and Zero-Day Network Intrusion Detection}
+\author{%
+\IEEEauthorblockN{Vihaan Ovalekar, Ojas Gore, Yash Pradhan, Ishan Tanawade}
+\IEEEauthorblockA{%
+\textit{Department of Artificial Intelligence and Data Science}\\
+\textit{SVKM's Dwarkadas J. Sanghvi College of Engineering}\\
+Mumbai, India\\
+\{vihaan.ovalekar, ojas.gore, yash.pradhan, ishan.tanawade\}@djsce.edu.in}%
+\thanks{Code, the split and leakage-purging scripts, and the scripts that regenerate every
+table and figure from the experiment outputs are available at
+\url{https://github.com/WinterBlossom0/IPD-IDS}. The dataset is redistributed by the
+Canadian Institute for Cybersecurity and is not included.}%
+}
 
-\author[djsce]{Vihaan Ovalekar\corref{cor1}}
-\ead{vihaan.ovalekar@djsce.edu.in}
-\author[djsce]{Ojas Gore}
-\author[djsce]{Yash Pradhan}
-\author[djsce]{Ishan Tanawade}
-\cortext[cor1]{Corresponding author.}
-\address[djsce]{Department of Artificial Intelligence and Data Science,
-SVKM's Dwarkadas J. Sanghvi College of Engineering, Mumbai, India}
+\maketitle
 
 \begin{abstract}
 Lightweight network intrusion detection systems report near-perfect
@@ -95,12 +83,12 @@ systematically mis-stated, since the classifier shipping with the encoder can be
 larger than the encoder itself.
 \end{abstract}
 
-\begin{keyword}
-Network intrusion detection\sep edge computing\sep shortcut learning\sep variational autoencoder\sep concept erasure\sep TinyML
-\end{keyword}
+\begin{IEEEkeywords}
+Network intrusion detection, edge computing, shortcut learning, variational autoencoder,
+concept erasure, TinyML.
+\end{IEEEkeywords}
 
-\end{frontmatter}
-
+%==============================================================================
 \section{Introduction}
 Flow-based intrusion detection is the practical option for encrypted networks: payloads are
 opaque, so detectors consume per-flow statistics from tools such as CICFlowMeter. A large
@@ -276,18 +264,9 @@ standard deviations.
 
 \input{tables_generated}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{../vae_training/runs/figures/fig1_srr.pdf}
-\caption{The destination port alone recovers almost the entire detection score available
-from all 46 features.}
-\label{fig:srr}
-\end{figure}
-
 \subsection{The benchmark is largely answerable from one field}
-Table~\ref{tab:srr} and Fig.~\ref{fig:srr} give the measurement: a depth-8 tree on the
-destination port alone reaches $F_1 = \SRRport$ against $\SRRall$ for all 46 features,
-i.e.\ $\mathrm{SRR} = \SRRratio$. Multiclass accuracy
+A depth-8 tree on the destination port alone reaches $F_1 = \SRRport$ against $\SRRall$ for
+all 46 features, i.e.\ $\mathrm{SRR} = \SRRratio$. Multiclass accuracy
 shows the asymmetry more clearly: port alone gives $0.597$ against $0.937$ for all features.
 Port identity therefore resolves \emph{whether} a flow is an attack far better than
 \emph{which} attack it is.
@@ -321,18 +300,9 @@ capacity, recall at a fixed threshold is not comparable across sizes. Threshold-
 is $0.97$--$0.99$ at \emph{every} capacity including the \paramsXS-parameter encoder. This
 argues for recalibrating on deployment traffic rather than transporting the threshold.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{../vae_training/runs/figures/fig3_erasure.pdf}
-\caption{Residual destination-port information in the latent, measured by a probe fitted
-after training on frozen representations. $1.0$ denotes no recoverable information.}
-\label{fig:erasure}
-\end{figure}
-
 \subsection{Erasure works, and is verified}
 MDL compression falls monotonically with $\lambda$ at every capacity
-(Table~\ref{tab:grid}, Fig.~\ref{fig:erasure}). At the largest size it drops from $7.16$ at
-$\lambda=0$ to $2.38$ at
+(Table~\ref{tab:grid}). At the largest size it drops from $7.16$ at $\lambda=0$ to $2.38$ at
 $\lambda=1$ under the MLP probe, and at size~S from $3.30$ to $1.76$, close to the
 uninformative floor of $1.0$. Because these are fresh probes fitted post-hoc on frozen
 latents, this is evidence of removal rather than of a defeated adversary.
@@ -348,7 +318,7 @@ We also predicted shortcut-free representations would degrade less under tempora
 They do not: the best shifted-split $F_1$ occurs at $\lambda=0$ (S: $0.622$; L: $0.610$)
 and increasing $\lambda$ reduces it (S at $\lambda=1$: $0.539$). Erasing a genuinely
 predictive cue costs detection performance and buys no transfer robustness here. Repeating
-the $\lambda=0$ cells across five seeds (Table~\ref{tab:seeds}) gives standard deviations comparable to the
+the $\lambda=0$ cells across five seeds gives standard deviations comparable to the
 differences between capacities, so we do not claim any capacity outperforms another on
 transfer; a single-seed reading of our own grid would have suggested size~S matches size~L
 at a $13\times$ parameter reduction, and the repeats show that is not supported.
@@ -419,21 +389,13 @@ against a second dataset where port conventions differ. The standardised NetFlow
 sets of~\cite{sarhan2021netflow} and UNSW-NB15~\cite{moustafa2015unsw} permit this without
 retraining.
 
-\section*{Acknowledgements}
+\section*{Acknowledgment}
 The authors thank Prof.\ Deepali Patil for her guidance and mentorship throughout this
 work, and the Department of Artificial Intelligence and Data Science, SVKM's Dwarkadas J.
 Sanghvi College of Engineering, Mumbai.
 
-\section*{Declaration of Generative AI and AI-assisted technologies in the writing process}
-During the preparation of this work the authors used Anthropic's Claude in order to draft
-and edit the manuscript text, to write the experiment and evaluation code, and to build the
-automated consistency checks used to verify that every reported figure traces to the
-recorded experimental output. All experiments were executed by the authors on their own
-hardware, and all results, tables and figures are generated from those runs. After using
-this tool the authors reviewed and edited the content as needed and take full responsibility
-for the content of the publication.
-
-\bibliographystyle{elsarticle-num}
+\balance
+\bibliographystyle{IEEEtran}
 \bibliography{refs}
 
 \end{document}
