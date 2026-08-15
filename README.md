@@ -1,4 +1,4 @@
-# Shortcut Reliance and Capacity in Parameter-Efficient Network Intrusion Detection
+# A Practical Hybrid VAE Framework for Parameter-Efficient Multiclass and Zero-Day Network Intrusion Detection
 
 Research code and manuscript for a study of **how much of flow-based intrusion-detection
 accuracy is real detection**, and what it costs to remove the part that is not.

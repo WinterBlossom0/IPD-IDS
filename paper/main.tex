@@ -37,15 +37,17 @@
 
 \begin{document}
 
-\title{Shortcut Reliance and Capacity in\\
-Parameter-Efficient Network Intrusion Detection}
+\title{A Practical Hybrid VAE Framework for\\
+Parameter-Efficient Multiclass and Zero-Day\\
+Network Intrusion Detection}
 
 \author{%
 \IEEEauthorblockN{Vihaan Ovalekar, Ojas Gore, Yash Pradhan, Ishan Tanawade}
 \IEEEauthorblockA{%
 \textit{Department of Artificial Intelligence and Data Science}\\
 \textit{SVKM's Dwarkadas J. Sanghvi College of Engineering}\\
-Mumbai, India}%
+Mumbai, India\\
+\{vihaan.ovalekar, ojas.gore, yash.pradhan, ishan.tanawade\}@djsce.edu.in}%
 }
 
 \maketitle
@@ -61,10 +63,10 @@ orchestrated attacks against fixed ports. We formalise this as the Shortcut Reli
 causal, column-wise variational autoencoder across capacities from \paramsL{} down to
 \paramsXS{} encoder parameters. A single forward pass supports two branches: a supervised
 head for attack classes present in training, and the reconstruction error as a label-free
-anomaly score for classes absent from it. The branches prove strongly complementary --- the
-head reaches recall $0.675$ on seen attack classes and $0.041$ on unseen ones, while the
-anomaly score reaches AUROC $0.989$ on unseen classes and $0.366$ on seen ones --- so
-neither alone is a detector and together they cover both regimes, at an encoder as small as
+anomaly score for classes absent from it. The branches prove strongly complementary. The head
+reaches recall $0.675$ on seen attack classes and $0.041$ on unseen ones, while the anomaly
+score reaches AUROC $0.989$ on unseen classes and $0.366$ on seen ones, so neither alone is
+a detector and together they cover both regimes, at an encoder as small as
 \paramsXS{} parameters. We additionally erase the port shortcut adversarially, verifying
 removal by minimum description length rather than adversary loss, and report two results
 that ran against expectation: larger encoders retain \emph{more} port information, and
@@ -88,8 +90,8 @@ compresses those detectors for edge hardware. Both largely evaluate on a single 
 
 Two findings make that untenable. Cross-dataset transfer collapses: Cantone \emph{et
 al.}~\cite{cantone2024crossdataset} measured within-dataset Matthews correlation of
-$94.63\%$ falling to $29.35\%$ across datasets. And the collapse is worst for the compressed
-models intended for deployment --- Hakim \emph{et al.}~\cite{hakim2026crossdomain} document
+$94.63\%$ falling to $29.35\%$ across datasets. The collapse is worst for exactly the compressed
+models intended for deployment. Hakim \emph{et al.}~\cite{hakim2026crossdomain} document
 that lightweight IIoT detectors ``rely heavily on dataset-specific patterns rather than
 generalizable security indicators.'' Neither work measures the mechanism.
 
@@ -162,23 +164,21 @@ CICFlowMeter features after removing constant and near-duplicate columns.
 
 \textbf{Splits.} Each capture file is split chronologically into fit ($0$--$25\%$),
 validation ($25$--$50\%$) and test ($50$--$100\%$) \emph{before} any cross-file
-concatenation, and nothing is shuffled. No split boundary crosses a file boundary and no
+concatenation, and nothing is shuffled, so no split boundary crosses a file boundary and no
 future flow informs a past one. Features receive a signed-log transform, then a RobustScaler
-fitted on the fit partition only. This avoids the temporal- and preprocessing-snooping
-pitfalls of~\cite{arp2022dos}. Because the split is chronological, the test partition is
-temporally shifted relative to fit, and we use the fit$\rightarrow$test gap as our
-environment-transfer measure.
+fitted on fit only, avoiding the temporal- and preprocessing-snooping pitfalls
+of~\cite{arp2022dos}. The test partition is thus temporally shifted relative to fit, and we
+use that gap as our environment-transfer measure.
 
-\textbf{Unseen attacks.} Several classes appear only in later partitions and are therefore
-genuinely unseen at training time, notably \texttt{SSH-Bruteforce} ($117{,}322$ test flows)
-and \texttt{Brute Force -XSS}. This zero-shot condition arises naturally from chronology
-rather than by synthetic hold-out.
+\textbf{Unseen attacks.} Four classes appear only in later partitions and are therefore
+genuinely unseen at training time, notably \texttt{SSH-Bruteforce}; together they are
+$94{,}343$ of the purged test attack windows. This zero-shot condition arises from
+chronology rather than synthetic hold-out.
 
 \textbf{Duplicates and leakage.} Exact-duplicate feature vectors account for $22.2\%$ of fit
-rows and $27.8\%$ of test rows, and $90{,}022$ distinct test vectors ($5.76\%$ of unique
-test rows) also occur in fit. All detection results in this paper are reported on the
-\emph{purged} split with those removed. Duplicates are masked at evaluation rather than
-deleted, because the sequence model requires contiguous windows.
+and $27.8\%$ of test rows, and $90{,}022$ distinct test vectors ($5.76\%$) also occur in fit.
+All detection results use the \emph{purged} split with those removed, masked at evaluation
+rather than deleted because the sequence model needs contiguous windows.
 
 \textbf{Port recovery.} The scaler was not persisted, but the transform is monotonic and
 invertible; solving for its two parameters recovers the port with $100\%$ of values within
@@ -216,7 +216,7 @@ with free-bits floor $\tau$~\cite{kingma2016iaf} and a $\beta$ warm-up~\cite{hig
 \subsection{Port erasure by confusion}
 An adversary $D_\phi$ predicts the port bucket from the window's terminal latent. Two design
 choices proved necessary. First, \emph{confusion rather than inversion}: maximising
-$D_\phi$'s cross-entropy is unbounded above and admits no equilibrium --- in preliminary runs
+$D_\phi$'s cross-entropy is unbounded above and admits no equilibrium. In preliminary runs
 it drove the ARD prior variance to ${\sim}5\times10^{3}$ without recovery. The encoder
 instead minimises
 \begin{equation}
@@ -260,8 +260,8 @@ standard deviations.
 \subsection{The benchmark is largely answerable from one field}
 A depth-8 tree on the destination port alone reaches $F_1 = \SRRport$ against $\SRRall$ for
 all 46 features, i.e.\ $\mathrm{SRR} = \SRRratio$. Multiclass accuracy
-shows the asymmetry more clearly --- port alone gives $0.597$ against $0.937$ for all
-features --- so port identity resolves \emph{whether} a flow is an attack far better than
+shows the asymmetry more clearly: port alone gives $0.597$ against $0.937$ for all features.
+Port identity therefore resolves \emph{whether} a flow is an attack far better than
 \emph{which} attack it is.
 
 \begin{figure*}[t]
@@ -284,7 +284,7 @@ latents, this is evidence of removal rather than of a defeated adversary.
 \subsection{Negative result: shortcut reliance does not rise as capacity falls}
 We predicted smaller encoders would lean harder on the shortcut. The measurements
 contradict this: at $\lambda=0$, MDL compression is $7.16$ (L), $4.04$ (M), $3.30$ (S),
-$3.31$ (XS) --- larger encoders retain \emph{more} port information, monotonically. One
+$3.31$ (XS). Larger encoders retain \emph{more} port information, monotonically. One
 confound tempers it: latent width co-varies with capacity here ($d=32,8,4,4$), and a wider
 latent has more room to store any attribute.
 
@@ -294,7 +294,7 @@ supervised head reaches recall $0.675 \pm 0.035$ on attack classes present in tr
 only $0.041 \pm 0.067$ on the four classes appearing solely in test, where the large spread
 reflects that most seeds detect almost none. Its label set cannot represent an unseen class.
 The reconstruction-error branch inverts this: AUROC $0.989 \pm 0.004$ on those same novel
-classes and $0.366$ --- below chance --- on seen ones, because seen attacks lie inside the
+classes and $0.366$, below chance, on seen ones, because seen attacks lie inside the
 distribution it was fitted to and therefore reconstruct well. Smaller encoders leave more
 novel-attack recall to the supervised branch (S: $0.265$), but no capacity approaches the
 anomaly branch on this axis.
@@ -324,15 +324,16 @@ must ship with it is not. Only the MLP-8 configuration fits an ESP32-class budge
 
 \subsection{Deployment cost, counted honestly}
 Table~\ref{tab:deploy} and Fig.~\ref{fig:deployment} give the cost of the \emph{system}, not the encoder alone. The
-encoder is genuinely small --- size~S is $2.95$~KB int8 at $0.23$~ms single-core CPU latency
---- but paired with LightGBM the deployed artefact is dominated by the head at $\lgbmKB$~KB,
+encoder is genuinely small: size~S is $2.95$~KB int8 at $0.23$~ms single-core CPU latency.
+Paired with LightGBM, however, the deployed artefact is dominated by the head at
+$\lgbmKB$~KB,
 which no microcontroller budget accommodates. With the MLP-8 head the complete system is
 \totalS~KB at size~S and \totalXS~KB at size~XS, both comfortably inside an ESP32-class
 512~KB SRAM budget, at a substantial accuracy cost relative to LightGBM.
 
-We consider this the paper's most transferable practical point: reported intrusion-detection
-efficiency figures should state the classifier's footprint alongside the encoder's, because
-in this regime the classifier is the larger artefact by two to three orders of magnitude.
+Reported intrusion-detection efficiency figures should therefore state the classifier's
+footprint alongside the encoder's: in this regime the classifier is larger by two to three
+orders of magnitude.
 
 \subsection{Capacity ordering is not resolved by these runs}
 Repeating the $\lambda=0$ cells across five seeds gives standard deviations comparable to
@@ -378,13 +379,13 @@ Ratio, and built an adversarial erasure method whose effect we verify with descr
 probes rather than adversary loss. Erasure demonstrably removes port information, but neither
 of our two guiding hypotheses survived measurement: shortcut reliance did not increase as
 capacity fell, and erasure did not improve cross-environment transfer. The result of
-practical value is efficiency --- a \paramsS-parameter encoder matches a \paramsL-parameter
-one on the shifted split at $2.95$~KB int8 and $0.23$~ms per inference on one CPU core.
+practical value concerns efficiency: a \paramsS-parameter encoder matches a
+\paramsL-parameter one on the shifted split at $2.95$~KB int8 and $0.23$~ms per inference on one CPU core.
 
 Future work should decouple latent width from capacity, extend SRR to further candidate
 shortcut fields, evaluate on the corrected labels of~\cite{liu2022error}, and test transfer
-against a second dataset where port conventions differ --- the standardised NetFlow feature
-sets of~\cite{sarhan2021netflow} or UNSW-NB15~\cite{moustafa2015unsw} permit this without
+against a second dataset where port conventions differ. The standardised NetFlow feature
+sets of~\cite{sarhan2021netflow} and UNSW-NB15~\cite{moustafa2015unsw} permit this without
 retraining.
 
 \section*{Acknowledgment}

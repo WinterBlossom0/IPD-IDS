@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 title: >-
-  Shortcut Reliance and Capacity in Parameter-Efficient
-  Network Intrusion Detection
+  A Practical Hybrid VAE Framework for Parameter-Efficient
+  Multiclass and Zero-Day Network Intrusion Detection
 message: If you use this software or its findings, please cite the manuscript in paper/.
 type: software
 authors:
