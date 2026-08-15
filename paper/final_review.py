@@ -64,11 +64,13 @@ else:
 # ---- 3. abstract structure
 abs_i = flat.find("Abstract")
 abs_txt = flat[abs_i:abs_i + 2200]
-labels = [l for l in ("Problem", "Method", "Results", "Conclusion") if l in abs_txt]
+# The opening paragraph carries the problem statement unlabelled; the remaining
+# three sections are labelled.
+want_lbl = ("Method", "Results", "Conclusion")
+labels = [l for l in want_lbl if l in abs_txt]
 print(f"abstract structure labels: {labels}")
-if len(labels) < 4:
-    warns.append(f"abstract missing structure labels: "
-                 f"{set(['Problem','Method','Results','Conclusion']) - set(labels)}")
+if len(labels) < len(want_lbl):
+    warns.append(f"abstract missing structure labels: {set(want_lbl) - set(labels)}")
 
 # ---- 4. duplicated sentences (editing leftovers)
 sents = [s.strip() for s in re.split(r"(?<=[.!?]) ", flat) if len(s.strip()) > 70]
